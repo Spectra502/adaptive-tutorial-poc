@@ -1,27 +1,33 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const path = require('path'); // Import the path module
+const path = require('path');
 const { OpenAI } = require('openai');
+require('dotenv').config();
 
 const app = express();
 const port = 3000;
 
 app.use(bodyParser.json());
 app.use(cors());
-
-// --- Serve the frontend static files ---
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// --- Configuration ---
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const CHAPTERS = [
-  'Aktivierung', 'Verkehrszeichen', 'Abstand', 'Ampelerkennung', 
-  'Spurführung', 'Notbremsung', 'Deaktivierung', 'Risiken/Verantwortung'
-];
+// --- Enhanced Chapter Information (from constants/quiz.ts) ---
+const CHAPTERS = {
+  'Aktivierung': 'Wie man das System aktiviert und was die verschiedenen Anzeigesymbole bedeuten.',
+  'Verkehrszeichen': 'Wie das Auto Tempolimits erkennt und die Geschwindigkeit anpasst.',
+  'Abstand': 'Wie der Abstandsregeltempomat funktioniert, um den Abstand zum vorderen Fahrzeug zu halten.',
+  'Ampelerkennung': 'Wie das System Ampeln erkennt und darauf reagiert.',
+  'Spurführung': 'Wie das Fahrzeug selbstständig die Spur hält und bei Bedarf wechselt.',
+  'Notbremsung': 'Wie der Notbremsassistent eingreift, um Kollisionen zu vermeiden.',
+  'Deaktivierung': 'Wie man das System manuell oder durch Eingreifen deaktiviert.',
+  'Risiken/Verantwortung': 'Die Wichtigkeit der Fahrerüberwachung und die Grenzen des Systems.'
+};
+const chapterNames = Object.keys(CHAPTERS);
 
 const sessions = {};
 
@@ -29,69 +35,107 @@ const sessions = {};
 
 app.get('/start', (req, res) => {
   const sessionId = `sess_${Date.now()}`;
-  sessions[sessionId] = {
-    userId: 'user123',
-    history: [],
-  };
-
+  sessions[sessionId] = {};
   res.json({
     sessionId,
     nextStep: {
       type: 'question',
-      text: "Welcome! To personalize your tutorial, could you tell me a bit about your experience with semi-automated driving systems?",
+      text: "Willkommen! Um Ihr Tutorial zu personalisieren, erzählen Sie uns bitte kurz von Ihrer Erfahrung mit teilautomatisierten Fahrsystemen.",
     },
   });
 });
 
 app.post('/respond', async (req, res) => {
   const { sessionId, answer } = req.body;
-
-  if (!sessions[sessionId]) {
-    return res.status(400).json({ error: 'Invalid session ID.' });
-  }
+  if (!sessions[sessionId]) return res.status(400).json({ error: 'Ungültige Sitzungs-ID.' });
 
   try {
-    const learningPath = await getLearningPathFromAI(answer);
-
-    sessions[sessionId].learningPath = learningPath;
-    sessions[sessionId].currentStep = 0;
+    const aiResponse = await getLearningPathFromAI(answer);
+    
+    sessions[sessionId].learningPath = aiResponse.recommended_path;
+    sessions[sessionId].currentStepIndex = 0;
 
     res.json({
       sessionId,
       nextStep: {
         type: 'content',
-        contentId: learningPath[0],
+        contentId: aiResponse.recommended_path[0],
       },
-      learningPath: learningPath,
+      learningPath: aiResponse.recommended_path,
+      reasoning: aiResponse.reasoning, // Send reasoning to the frontend
     });
   } catch (error) {
-    console.error("Error communicating with AI:", error);
-    res.status(500).json({ error: "Sorry, I had trouble creating your learning path." });
+    console.error("Fehler bei der Kommunikation mit der KI:", error);
+    res.status(500).json({ error: "Entschuldigung, beim Erstellen Ihres Lernpfads ist ein Fehler aufgetreten." });
   }
 });
 
+app.post('/next', (req, res) => {
+  const { sessionId } = req.body;
+  const session = sessions[sessionId];
+
+  if (!session || !session.learningPath) {
+    return res.status(400).json({ error: 'Sitzung nicht gefunden oder Lernpfad nicht erstellt.' });
+  }
+
+  session.currentStepIndex++;
+
+  if (session.currentStepIndex < session.learningPath.length) {
+    res.json({
+      nextStep: {
+        type: 'content',
+        contentId: session.learningPath[session.currentStepIndex],
+      },
+      isComplete: false,
+    });
+  } else {
+    res.json({
+      nextStep: {
+        type: 'complete',
+        text: 'Tutorial abgeschlossen!',
+      },
+      isComplete: true,
+    });
+  }
+});
+
+
+// --- Helper Function for AI Interaction ---
+
 async function getLearningPathFromAI(userInput) {
+  const chapterSummaries = Object.entries(CHAPTERS).map(([key, value]) => `- ${key}: ${value}`).join('\n');
+
   const prompt = `
-    You are an expert tutor for an in-car driver assistance system. 
-    A new user said this when asked about their experience: "${userInput}".
+    Sie sind ein Experte für Fahrassistenzsysteme in Autos. Ein Benutzer hat auf die Frage nach seiner Erfahrung folgendes geantwortet: "${userInput}".
 
-    The available tutorial chapters are: ${CHAPTERS.join(', ')}.
+    Die verfügbaren Tutorial-Kapitel sind:
+    ${chapterSummaries}
 
-    Based on their input, generate a personalized learning path. If the user seems nervous or inexperienced, start with "Aktivierung" and "Risiken/Verantwortung". If they sound overconfident or mention wanting to not pay attention, prioritize "Risiken/Verantwortung". If they sound experienced, you can start with more advanced topics like "Spurführung" or "Ampelerkennung".
+    Basierend auf der Antwort des Benutzers, erstellen Sie einen personalisierten Lernpfad.
+    - Wenn der Benutzer nervös oder unerfahren wirkt, beginnen Sie mit "Aktivierung" und "Risiken/Verantwortung".
+    - Wenn der Benutzer übermäßig selbstsicher wirkt oder erwähnt, nicht aufpassen zu wollen, priorisieren Sie "Risiken/Verantwortung".
+    - Wenn der Benutzer erfahren klingt, können Sie mit fortgeschritteneren Themen wie "Spurführung" beginnen.
 
-    Respond ONLY with a JSON object in this format: {"recommended_path": ["Chapter1", "Chapter2", ...]}.
+    Antworten Sie NUR mit einem JSON-Objekt im folgenden Format:
+    {
+      "reasoning": "Eine kurze Begründung für die gewählte Reihenfolge in 1-2 Sätzen.",
+      "recommended_path": ["Kapitel1", "Kapitel2", ...]
+    }
   `;
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
+    model: "gpt-4o",
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
   });
   
   const result = JSON.parse(completion.choices[0].message.content);
-  return result.recommended_path || [];
+  // Ensure the path is valid and doesn't contain non-existent chapters
+  result.recommended_path = result.recommended_path.filter(chapter => chapterNames.includes(chapter));
+  
+  return result;
 }
 
 app.listen(port, () => {
-  console.log(`✅ Server is running! Open http://localhost:${port} in your browser.`);
+  console.log(`✅ Server läuft! Öffnen Sie http://localhost:${port} in Ihrem Browser.`);
 });
