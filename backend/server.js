@@ -16,18 +16,18 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// --- Enhanced Chapter Information (from constants/quiz.ts) ---
-const CHAPTERS = {
-  'Aktivierung': 'Wie man das System aktiviert und was die verschiedenen Anzeigesymbole bedeuten.',
-  'Verkehrszeichen': 'Wie das Auto Tempolimits erkennt und die Geschwindigkeit anpasst.',
-  'Abstand': 'Wie der Abstandsregeltempomat funktioniert, um den Abstand zum vorderen Fahrzeug zu halten.',
-  'Ampelerkennung': 'Wie das System Ampeln erkennt und darauf reagiert.',
-  'Spurführung': 'Wie das Fahrzeug selbstständig die Spur hält und bei Bedarf wechselt.',
-  'Notbremsung': 'Wie der Notbremsassistent eingreift, um Kollisionen zu vermeiden.',
-  'Deaktivierung': 'Wie man das System manuell oder durch Eingreifen deaktiviert.',
-  'Risiken/Verantwortung': 'Die Wichtigkeit der Fahrerüberwachung und die Grenzen des Systems.'
+// --- Chapter Information ---
+const ALL_CHAPTERS = {
+  'Aktivierung': 'Wie man das System aktiviert...',
+  'Verkehrszeichen': 'Wie das Auto Tempolimits erkennt...',
+  'Abstand': 'Wie der Abstandsregeltempomat funktioniert...',
+  'Ampelerkennung': 'Wie das System Ampeln erkennt...',
+  'Spurführung': 'Wie das Fahrzeug selbstständig die Spur hält...',
+  'Notbremsung': 'Wie der Notbremsassistent eingreift...',
+  'Risiken/Verantwortung': 'Die Wichtigkeit der Fahrerüberwachung...',
+  'Deaktivierung': 'Wie man das System manuell deaktiviert...',
 };
-const chapterNames = Object.keys(CHAPTERS);
+const ADAPTIVE_CHAPTERS = ['Verkehrszeichen', 'Abstand', 'Ampelerkennung', 'Spurführung', 'Notbremsung'];
 
 const sessions = {};
 
@@ -36,105 +36,85 @@ const sessions = {};
 app.get('/start', (req, res) => {
   const sessionId = `sess_${Date.now()}`;
   sessions[sessionId] = {};
-  res.json({
-    sessionId,
-    nextStep: {
-      type: 'question',
-      text: "Willkommen! Um Ihr Tutorial zu personalisieren, erzählen Sie uns bitte kurz von Ihrer Erfahrung mit teilautomatisierten Fahrsystemen.",
-    },
-  });
+  res.json({ sessionId });
 });
 
 app.post('/respond', async (req, res) => {
-  const { sessionId, answer } = req.body;
+  const { sessionId, scores, openAnswer } = req.body;
   if (!sessions[sessionId]) return res.status(400).json({ error: 'Ungültige Sitzungs-ID.' });
 
   try {
-    const aiResponse = await getLearningPathFromAI(answer);
-    
-    sessions[sessionId].learningPath = aiResponse.recommended_path;
-    sessions[sessionId].currentStepIndex = 0;
+    // --- SERVER-SIDE ANALYSIS ---
 
+    // Step 1: Calculate "Danger Gaps"
+    const dangerGaps = {};
+    for (const chapter of ADAPTIVE_CHAPTERS) {
+      if (scores[chapter]) {
+        dangerGaps[chapter] = scores[chapter].capability - scores[chapter].limitation;
+      }
+    }
+
+    // Step 2: Prioritize Adaptive Chapters
+    const sortedAdaptivePath = Object.entries(dangerGaps)
+      .sort(([, gapA], [, gapB]) => gapB - gapA)
+      .map(([chapter]) => chapter);
+
+    // Step 3: Construct the Final "Safety Sandwich" Path
+    const finalPath = [
+      'Aktivierung',
+      ...sortedAdaptivePath,
+      'Risiken/Verantwortung',
+      'Deaktivierung'
+    ];
+
+    // Step 4: Get AI Reasoning based on the analysis
+    const reasoning = await getReasoningFromAI(scores, dangerGaps, openAnswer);
+
+    // --- SEND FULL ANALYSIS TO FRONTEND ---
     res.json({
-      sessionId,
-      nextStep: {
-        type: 'content',
-        contentId: aiResponse.recommended_path[0],
+      analysis: {
+        dangerGaps,
+        sortedAdaptivePath,
       },
-      learningPath: aiResponse.recommended_path,
-      reasoning: aiResponse.reasoning, // Send reasoning to the frontend
+      finalPath,
+      reasoning,
     });
+
   } catch (error) {
-    console.error("Fehler bei der Kommunikation mit der KI:", error);
-    res.status(500).json({ error: "Entschuldigung, beim Erstellen Ihres Lernpfads ist ein Fehler aufgetreten." });
-  }
-});
-
-app.post('/next', (req, res) => {
-  const { sessionId } = req.body;
-  const session = sessions[sessionId];
-
-  if (!session || !session.learningPath) {
-    return res.status(400).json({ error: 'Sitzung nicht gefunden oder Lernpfad nicht erstellt.' });
-  }
-
-  session.currentStepIndex++;
-
-  if (session.currentStepIndex < session.learningPath.length) {
-    res.json({
-      nextStep: {
-        type: 'content',
-        contentId: session.learningPath[session.currentStepIndex],
-      },
-      isComplete: false,
-    });
-  } else {
-    res.json({
-      nextStep: {
-        type: 'complete',
-        text: 'Tutorial abgeschlossen!',
-      },
-      isComplete: true,
-    });
+    console.error("Fehler bei der serverseitigen Analyse oder KI-Kommunikation:", error);
+    res.status(500).json({ error: "Entschuldigung, bei der Erstellung Ihres Lernpfads ist ein Fehler aufgetreten." });
   }
 });
 
 
 // --- Helper Function for AI Interaction ---
-
-async function getLearningPathFromAI(userInput) {
-  const chapterSummaries = Object.entries(CHAPTERS).map(([key, value]) => `- ${key}: ${value}`).join('\n');
-
+async function getReasoningFromAI(scores, dangerGaps, openAnswer) {
   const prompt = `
-    Sie sind ein Experte für Fahrassistenzsysteme in Autos. Ein Benutzer hat auf die Frage nach seiner Erfahrung folgendes geantwortet: "${userInput}".
+    You are an expert AI tutor for driver-assistance systems.
+    A user has completed a self-assessment with the following results:
+    - Raw Scores (capability vs. limitation): ${JSON.stringify(scores)}
+    - Calculated "Danger Gaps" (high value = potential overconfidence): ${JSON.stringify(dangerGaps)}
+    - Their answer to "What is the biggest misunderstanding people have?": "${openAnswer}"
 
-    Die verfügbaren Tutorial-Kapitel sind:
-    ${chapterSummaries}
+    Based on this data, a personalized learning path has already been created.
+    Your task is to write a brief, encouraging, and personalized reasoning text (in German) that explains WHY the tutorial is structured this way for the user.
 
-    Basierend auf der Antwort des Benutzers, erstellen Sie einen personalisierten Lernpfad.
-    - Wenn der Benutzer nervös oder unerfahren wirkt, beginnen Sie mit "Aktivierung" und "Risiken/Verantwortung".
-    - Wenn der Benutzer übermäßig selbstsicher wirkt oder erwähnt, nicht aufpassen zu wollen, priorisieren Sie "Risiken/Verantwortung".
-    - Wenn der Benutzer erfahren klingt, können Sie mit fortgeschritteneren Themen wie "Spurführung" beginnen.
+    - If you see high "Danger Gaps", acknowledge their confidence but emphasize the importance of understanding the system's limits.
+    - If the gaps are low or negative, praise their balanced understanding.
+    - Refer to their open answer if it's relevant to their scores.
+    - Be friendly and supportive.
 
-    Antworten Sie NUR mit einem JSON-Objekt im folgenden Format:
-    {
-      "reasoning": "Eine kurze Begründung für die gewählte Reihenfolge in 1-2 Sätzen.",
-      "recommended_path": ["Kapitel1", "Kapitel2", ...]
-    }
+    Provide ONLY the reasoning text as a single string.
   `;
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_object" },
   });
   
-  const result = JSON.parse(completion.choices[0].message.content);
-  // Ensure the path is valid and doesn't contain non-existent chapters
-  result.recommended_path = result.recommended_path.filter(chapter => chapterNames.includes(chapter));
-  
-  return result;
+  return completion.choices[0].message.content;
 }
+
 
 app.listen(port, () => {
   console.log(`✅ Server läuft! Öffnen Sie http://localhost:${port} in Ihrem Browser.`);
