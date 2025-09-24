@@ -28,6 +28,7 @@ const ALL_CHAPTERS = {
   'Deaktivierung': 'Wie man das System manuell deaktiviert...',
 };
 const ADAPTIVE_CHAPTERS = ['Verkehrszeichen', 'Abstand', 'Ampelerkennung', 'Spurführung', 'Notbremsung'];
+const MASTERY_THRESHOLD = 6; // Mindest-Capability-Score, um ein Kapitel zu überspringen
 
 const sessions = {};
 
@@ -44,8 +45,6 @@ app.post('/respond', async (req, res) => {
   if (!sessions[sessionId]) return res.status(400).json({ error: 'Ungültige Sitzungs-ID.' });
 
   try {
-    // --- SERVER-SIDE ANALYSIS ---
-
     // Step 1: Calculate "Danger Gaps"
     const dangerGaps = {};
     for (const chapter of ADAPTIVE_CHAPTERS) {
@@ -54,55 +53,61 @@ app.post('/respond', async (req, res) => {
       }
     }
 
-    // Step 2: Prioritize Adaptive Chapters
-    const sortedAdaptivePath = Object.entries(dangerGaps)
+    // Step 2: Prioritize and **Filter** Adaptive Chapters
+    const sortedAndFilteredPath = Object.entries(dangerGaps)
       .sort(([, gapA], [, gapB]) => gapB - gapA)
+      .filter(([chapter, gap]) => {
+          const capabilityScore = scores[chapter].capability;
+          // Behalte das Kapitel, WENN:
+          // 1. Der Danger Gap positiv ist (es gibt eine Wissenslücke)
+          // ODER
+          // 2. Der Capability Score unter dem Experten-Level liegt.
+          return gap > 0 || capabilityScore < MASTERY_THRESHOLD;
+      })
       .map(([chapter]) => chapter);
 
     // Step 3: Construct the Final "Safety Sandwich" Path
     const finalPath = [
       'Aktivierung',
-      ...sortedAdaptivePath,
+      ...sortedAndFilteredPath,
       'Risiken/Verantwortung',
       'Deaktivierung'
     ];
 
-    // Step 4: Get AI Reasoning based on the analysis
-    const reasoning = await getReasoningFromAI(scores, dangerGaps, openAnswer);
+    // Step 4: Get AI Reasoning
+    const reasoning = await getReasoningFromAI(scores, dangerGaps, openAnswer, finalPath);
 
-    // --- SEND FULL ANALYSIS TO FRONTEND ---
     res.json({
       analysis: {
         dangerGaps,
-        sortedAdaptivePath,
+        sortedAdaptivePath: sortedAndFilteredPath, // Name beibehalten für Konsistenz
       },
       finalPath,
       reasoning,
     });
 
-  } catch (error) {
+  } catch (error)
+ {
     console.error("Fehler bei der serverseitigen Analyse oder KI-Kommunikation:", error);
     res.status(500).json({ error: "Entschuldigung, bei der Erstellung Ihres Lernpfads ist ein Fehler aufgetreten." });
   }
 });
 
 
-// --- Helper Function for AI Interaction ---
-async function getReasoningFromAI(scores, dangerGaps, openAnswer) {
+// --- Helper Function for AI Interaction (angepasst, um den finalen Pfad zu kennen) ---
+async function getReasoningFromAI(scores, dangerGaps, openAnswer, finalPath) {
   const prompt = `
     You are an expert AI tutor for driver-assistance systems.
-    A user has completed a self-assessment with the following results:
-    - Raw Scores (capability vs. limitation): ${JSON.stringify(scores)}
-    - Calculated "Danger Gaps" (high value = potential overconfidence): ${JSON.stringify(dangerGaps)}
-    - Their answer to "What is the biggest misunderstanding people have?": "${openAnswer}"
+    A user has completed a self-assessment. Based on their scores, a learning path has been generated.
+    - Raw Scores: ${JSON.stringify(scores)}
+    - Calculated "Danger Gaps": ${JSON.stringify(dangerGaps)}
+    - User's open answer: "${openAnswer}"
+    - The final, generated learning path is: ${JSON.stringify(finalPath)}
 
-    Based on this data, a personalized learning path has already been created.
-    Your task is to write a brief, encouraging, and personalized reasoning text (in German) that explains WHY the tutorial is structured this way for the user.
-
-    - If you see high "Danger Gaps", acknowledge their confidence but emphasize the importance of understanding the system's limits.
-    - If the gaps are low or negative, praise their balanced understanding.
-    - Refer to their open answer if it's relevant to their scores.
-    - Be friendly and supportive.
+    Your task is to write a brief, personalized reasoning text (in German).
+    - If chapters were skipped (the middle of the path is empty), praise their expertise and explain that the tutorial has been shortened for them.
+    - If there are chapters in the middle, explain why those were chosen (e.g., to close specific knowledge gaps).
+    - Refer to their open answer to show you've understood their excellent insight.
 
     Provide ONLY the reasoning text as a single string.
   `;
