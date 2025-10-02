@@ -6,32 +6,47 @@
     <title>Adaptives Tutorial PoC</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        #app-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 90%; max-width: 600px; text-align: center; }
-        #content-area h2 { margin-top: 0; color: #007aff; }
-        #content-area p { font-size: 1.1em; line-height: 1.6; }
-        #response-form { margin-top: 20px; }
-        textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1em; min-height: 80px; box-sizing: border-box; }
+        #app-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 90%; max-width: 800px; }
+        h2 { margin-top: 0; color: #007aff; }
+        p { font-size: 1.1em; line-height: 1.6; }
+        #assessment-form { margin-top: 20px; text-align: left; }
+        .form-section { margin-bottom: 25px; }
+        .form-question { margin-bottom: 15px; }
+        .form-question label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .form-question select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
+        textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1em; min-height: 80px; box-sizing: border-box; margin-top: 10px; }
         button { background-color: #007aff; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1em; cursor: pointer; margin-top: 10px; transition: background-color 0.2s; }
         button:hover { background-color: #0056b3; }
         button:disabled { background-color: #ccc; cursor: not-allowed; }
-        #path-display { margin-top: 25px; text-align: left; font-size: 0.9em; color: #555; background-color: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid #007aff; }
-        #path-display strong { display: block; margin-bottom: 5px; }
-        #ai-reasoning { margin-top: 15px; font-style: italic; color: #444; }
+        #results-area { margin-top: 25px; text-align: left; font-size: 0.9em; color: #555; background-color: #f9f9f9; padding: 15px; border-radius: 8px; }
+        #results-area strong { display: block; margin-bottom: 5px; color: #007aff; }
+        pre { background-color: #eef; padding: 10px; border-radius: 6px; white-space: pre-wrap; word-wrap: break-word; }
     </style>
 </head>
 <body>
 
     <div id="app-container">
         <div id="content-area">
+            <h2>Einschätzung Ihres Wissens</h2>
+            <p>Bitte bewerten Sie Ihr Wissen zu den folgenden Systemen auf einer Skala von 1 (keine Ahnung) bis 7 (Expertenwissen).</p>
+        </div>
+
+        <form id="assessment-form">
+            <div id="form-questions"></div>
+
+            <div class="form-section">
+                <label for="open-question"><b>Zusätzliche Frage:</b> Was ist Ihrer Meinung nach das größte Missverständnis, das Menschen über moderne Fahrerassistenzsysteme haben?</label>
+                <textarea id="open-question" name="open-question" placeholder="Ihre Antwort hier..."></textarea>
             </div>
-        <div id="response-form" style="display: none;">
-            <textarea id="user-answer" placeholder="Ihre Antwort hier..."></textarea>
-            <button id="submit-button">Senden</button>
+
+            <button id="submit-button" type="submit">Lernpfad erstellen</button>
+        </form>
+
+        <div id="results-area" style="display: none;">
+            <h2>Analyse & Ihr persönlicher Lernpfad</h2>
+            <div id="analysis-steps"></div>
+            <div id="path-display"></div>
         </div>
-        <div id="navigation-controls" style="display: none;">
-             <button id="next-button">Weiter</button>
-        </div>
-        <div id="path-display" style="display: none;"></div>
     </div>
 
     <script src="script.js"></script>

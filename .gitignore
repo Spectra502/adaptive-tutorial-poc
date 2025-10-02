@@ -1,2 +1,6 @@
 .env
 backend/node_modules
+*.pptx
+*.docx
+*.zip
+*.JPG
