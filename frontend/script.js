@@ -6,15 +6,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const analysisSteps = document.getElementById('analysis-steps');
     const pathDisplay = document.getElementById('path-display');
     const contentArea = document.getElementById('content-area');
+    const questionArea = document.getElementById('question-area');
+    const questionTitle = document.getElementById('question-title');
+    const questionText = document.getElementById('question-text');
+    const questionChoices = document.getElementById('question-choices');
+    const submitAnswerButton = document.getElementById('submit-answer-button');
 
     let sessionId = null;
+    let currentChapter = null;
 
-    // The chapters that require assessment
     const assessableChapters = [
         'Verkehrszeichenassistent', 'Abstandsregeltempomat', 'Ampelerkennung', 'Spurführungsassistent', 'Notbremsassistent'
     ];
     
-    // Descriptions from the image, mapped to chapter names for easy access
     const chapterDetails = {
         'Verkehrszeichenassistent': 'Erkennt Verkehrszeichen und zeigt die Informationen im Fahrzeug an. Kann die Geschwindigkeit entsprechend automatisch anpassen.',
         'Abstandsregeltempomat': 'Hält automatisch einen voreingestellten Abstand zum vorausfahrenden Fahrzeug durch Beschleunigen und Abbremsen.',
@@ -23,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'Notbremsassistent': 'Erkennt Kollisionsgefahren und warnt davor. Bremst bei drohender Kollision automatisch zur Reduktion der Aufprallgeschwindigkeit.'
     };
 
-    // Renamed assessable chapters from the server for matching
     const serverChapterMap = {
         'Verkehrszeichenassistent': 'Verkehrszeichen',
         'Abstandsregeltempomat': 'Abstand',
@@ -32,9 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'Notbremsassistent': 'Notbremsung'
     };
 
-    // --- Helper function to create a single slider question ---
     function createSliderQuestion(type, chapter) {
-        // Use a clean ID for form elements
         const chapterId = serverChapterMap[chapter].toLowerCase().replace(' ', '-');
         const description = chapterDetails[chapter];
         const nameAttribute = type === 'capability' ? `capability-${chapterId}` : `limitation-${chapterId}`;
@@ -50,49 +51,36 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="slider-value" id="value-${uniqueId}">4</span>
                     </div>
                     <div class="slider-labels">
-                        <span>keins</span>
-                        <span>sehr wenig</span>
-                        <span>wenig</span>
-                        <span>eher wenig</span>
-                        <span>eher viel</span>
-                        <span>viel</span>
-                        <span>sehr viel</span>
+                        <span>keins</span><span>sehr wenig</span><span>wenig</span><span>eher wenig</span><span>eher viel</span><span>viel</span><span>sehr viel</span>
                     </div>
                 </div>
             </div>
         `;
     }
 
-    // --- Function to build the form dynamically ---
     function buildAssessmentForm() {
         let theoreticalHTML = '<h3>Wie viel theoretisches Wissen (z.B. über Artikel, Videos, etc.) haben Sie über die folgenden Fahrerassistenzsysteme?</h3>';
         let practicalHTML = '<h3>Wie viel praktische Erfahrung haben Sie mit den folgenden Fahrerassistenzsystemen?</h3>';
-
         assessableChapters.forEach(chapter => {
-            // "Theoretisches Wissen" maps to the 'capability' score
             theoreticalHTML += createSliderQuestion('capability', chapter);
-            // "Praktische Erfahrung" maps to the 'limitation' score
             practicalHTML += createSliderQuestion('limitation', chapter);
         });
-
         formQuestionsContainer.innerHTML = theoreticalHTML + practicalHTML;
     }
 
-    // --- Start the session and build the form ---
     async function startSession() {
         try {
             const response = await fetch('/start');
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             sessionId = data.sessionId;
-            buildAssessmentForm(); // Build the form on page load
+            buildAssessmentForm();
         } catch (error) {
             console.error('Error starting session:', error);
             contentArea.innerHTML = `<h2>Fehler</h2><p>Verbindung zum Backend konnte nicht hergestellt werden. Läuft der Server?</p>`;
         }
     }
 
-    // --- Handle Form Submission ---
     assessmentForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         submitButton.disabled = true;
@@ -101,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(assessmentForm);
         const scores = {};
         
-        // This logic remains the same, as the form 'name' attributes are preserved
         Object.values(serverChapterMap).forEach(serverChapter => {
             const chapterId = serverChapter.toLowerCase().replace(' ', '-');
             scores[serverChapter] = {
@@ -109,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 limitation: parseInt(formData.get(`limitation-${chapterId}`), 10)
             };
         });
-
         const openAnswer = formData.get('open-question');
 
         try {
@@ -123,7 +109,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(errData.error || 'Server error');
             }
             const data = await response.json();
-            displayResults(data);
+
+            if (data.needsQuestions) {
+                assessmentForm.style.display = 'none';
+                contentArea.style.display = 'none';
+                questionArea.style.display = 'block';
+                fetchNextQuestion();
+            } else {
+                displayResults(data);
+            }
+
         } catch (error) {
             console.error('Error submitting form:', error);
             resultsArea.innerHTML = `<h2>Fehler</h2><p>Etwas ist schiefgelaufen: ${error.message}</p>`;
@@ -134,25 +129,93 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Display the full analysis ---
+    async function fetchNextQuestion() {
+        try {
+            const response = await fetch('/question', {
+                headers: { 'X-Session-ID': sessionId }
+            });
+            if (!response.ok) throw new Error('Could not fetch the next question.');
+            const data = await response.json();
+
+            currentChapter = data.chapter;
+            questionTitle.textContent = `Kontrollfrage für: ${data.chapter}`;
+            questionText.textContent = data.question;
+            
+            questionChoices.innerHTML = '';
+            Object.entries(data.choices).forEach(([key, value]) => {
+                const choiceEl = document.createElement('div');
+                choiceEl.classList.add('choice');
+                choiceEl.dataset.key = key;
+                choiceEl.textContent = `${key}) ${value}`;
+                questionChoices.appendChild(choiceEl);
+            });
+
+        } catch (error) {
+            console.error('Error fetching question:', error);
+            questionArea.innerHTML = `<p>Fehler beim Laden der Frage.</p>`;
+        }
+    }
+
+    questionChoices.addEventListener('click', (event) => {
+        if (event.target.classList.contains('choice')) {
+            [...questionChoices.children].forEach(child => child.classList.remove('selected'));
+            event.target.classList.add('selected');
+        }
+    });
+
+    submitAnswerButton.addEventListener('click', async () => {
+        const selectedChoice = questionChoices.querySelector('.choice.selected');
+        if (!selectedChoice) {
+            alert('Bitte wählen Sie eine Antwort aus.');
+            return;
+        }
+
+        const answer = selectedChoice.dataset.key;
+        submitAnswerButton.disabled = true;
+        submitAnswerButton.textContent = 'Prüfe...';
+
+        try {
+            const response = await fetch('/answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId, chapter: currentChapter, answer }),
+            });
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'Server error');
+            }
+            const data = await response.json();
+
+            if (data.hasMoreQuestions) {
+                fetchNextQuestion();
+            } else {
+                questionArea.style.display = 'none';
+                displayResults(data);
+            }
+
+        } catch (error) {
+            console.error('Error submitting answer:', error);
+            questionArea.innerHTML = `<p>Fehler bei der Übermittlung der Antwort: ${error.message}</p>`;
+        } finally {
+            submitAnswerButton.disabled = false;
+            submitAnswerButton.textContent = 'Antwort bestätigen';
+        }
+    });
+
     function displayResults(data) {
-        // Hide the form and initial text
         assessmentForm.style.display = 'none';
         contentArea.style.display = 'none';
-
-        // Show the results area
         resultsArea.style.display = 'block';
 
-        // The result display logic remains unchanged
         analysisSteps.innerHTML = `
             <div>
                 <strong>Schritt 1: "Danger Gap" Analyse</strong>
-                <p>Hier berechnen wir die Differenz zwischen Ihren Bewertungen für theoretisches Wissen (Fähigkeiten) und praktische Erfahrung (Grenzen). Ein hoher positiver Wert deutet auf mögliches Übervertrauen hin.</p>
+                <p>Hier berechnen wir die Differenz zwischen Ihren Bewertungen für theoretisches Wissen (Fähigkeiten) und praktische Erfahrung (Grenzen). Ein hoher positiver Wert deutet auf mögliches Übervertrauen hin und löst eine Kontrollfrage aus.</p>
                 <pre>${JSON.stringify(data.analysis.dangerGaps, null, 2)}</pre>
             </div>
             <div>
                 <strong>Schritt 2: Priorisierung der adaptiven Kapitel</strong>
-                <p>Die Kapitel werden basierend auf dem höchsten "Danger Gap" sortiert, um die größten Wissenslücken zuerst zu schließen.</p>
+                <p>Die Kapitel, bei denen Sie eine Wissenslücke zeigten (falsche Antwort oder Übervertrauen), werden basierend auf dem "Danger Gap" sortiert.</p>
                 <pre>${JSON.stringify(data.analysis.sortedAdaptivePath, null, 2)}</pre>
             </div>
         `;

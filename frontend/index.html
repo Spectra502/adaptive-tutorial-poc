@@ -31,6 +31,28 @@
         #results-area { margin-top: 25px; text-align: left; font-size: 0.9em; color: #555; background-color: #f9f9f9; padding: 15px; border-radius: 8px; }
         #results-area strong { display: block; margin-bottom: 5px; color: #007aff; }
         pre { background-color: #eef; padding: 10px; border-radius: 6px; white-space: pre-wrap; word-wrap: break-word; }
+
+        /* --- New Question Area Styles --- */
+        #question-area { margin-top: 25px; }
+        #question-choices .choice {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        #question-choices .choice:hover {
+            background-color: #f0f8ff;
+            border-color: #007aff;
+        }
+        #question-choices .choice.selected {
+            background-color: #e6f3ff;
+            border-color: #007aff;
+            font-weight: bold;
+        }
+        #submit-answer-button { margin-top: 20px; }
+
     </style>
 </head>
 <body>
@@ -53,6 +75,13 @@
 
             <button id="submit-button" type="submit">Lernpfad erstellen</button>
         </form>
+
+        <div id="question-area" style="display: none;">
+            <h2 id="question-title">Kontrollfrage</h2>
+            <p id="question-text"></p>
+            <div id="question-choices"></div>
+            <button id="submit-answer-button">Antwort bestätigen</button>
+        </div>
 
         <div id="results-area" style="display: none;">
             <h2>Analyse & Ihr persönlicher Lernpfad</h2>
