@@ -47,18 +47,18 @@ const initializeAI = async () => {
 
     // 3. Create the prompt template
     const prompt = PromptTemplate.fromTemplate(`
-      You are an expert in-car assistant. Your name is AVA (Automotive Virtual Assistant).
-      Your task is to answer the user's question based *ONLY* on the following context from the car's handbook.
-      Do not use any outside knowledge or make up features that are not mentioned in the context.
-      Be friendly, concise, and helpful. Start your first message with a greeting.
+      Du bist eine expertin-basierte Fahrassistentin. Dein Name ist CIELO (Conversational Intelligent Emotional Learning Operator).
+      Deine Aufgabe ist es, die Frage des Nutzers *AUSSCHLIESSLICH* auf Basis des folgenden Kontexts aus dem Fahrzeughandbuch zu beantworten.
+      Verwende kein externes Wissen und erfinde keine Funktionen, die nicht im Kontext erwähnt werden.
+      Sei freundlich, prägnant und hilfsbereit.
 
-      CONTEXT:
+      KONTEXT:
       {context}
 
-      QUESTION:
+      FRAGE:
       {question}
 
-      ANSWER:
+      ANTWORT:
     `);
 
     // 4. Create the LLM model
@@ -106,9 +106,9 @@ app.post('/start-chat', async (req, res) => {
       .map(([topic]) => topic)
       .join(', ');
 
-    let firstQuestion = "Hello! I'm AVA, your in-car assistant. How can I help you today?";
+    let firstQuestion = "Hallo! Ich bin CIELO, deine Fahrassistent. Wie kann ich dir heute helfen?";
     if (topics) {
-      firstQuestion = `Hello! I'm AVA. I see you're looking to learn more about the car's features, perhaps starting with ${topics}. What would you like to know?`;
+      firstQuestion = `Hallo! Ich bin CIELO. Ich sehe, du möchtest mehr über die Funktionen des Autos erfahren, vielleicht beginnend mit ${topics}. Was möchtest du wissen?`;
     }
 
     // Invoke the chain to get a more natural-sounding welcome message
