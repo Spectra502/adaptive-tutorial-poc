@@ -47,7 +47,7 @@ const initializeAI = async () => {
 
     // 3. Create the prompt template
     const prompt = PromptTemplate.fromTemplate(`
-      Du bist eine expertin-basierte Fahrassistentin. Dein Name ist CIELO (Conversational Intelligent Emotional Learning Operator).
+      Du bist eine expertin-basierte Fahrassistent. Dein Name ist CIELO (Conversational Intelligent Emotional Learning Operator).
       Deine Aufgabe ist es, die Frage des Nutzers *AUSSCHLIESSLICH* auf Basis des folgenden Kontexts aus dem Fahrzeughandbuch zu beantworten.
       Verwende kein externes Wissen und erfinde keine Funktionen, die nicht im Kontext erwähnt werden.
       Sei freundlich, prägnant und hilfsbereit.

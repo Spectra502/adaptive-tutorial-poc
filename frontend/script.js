@@ -1,33 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const formQuestionsContainer = document.getElementById('form-questions');
+    // --- Global Element References ---
+    const assessmentContainer = document.getElementById('assessment-container');
     const assessmentForm = document.getElementById('assessment-form');
-    const submitButton = document.getElementById('submit-button');
-    const resultsArea = document.getElementById('results-area');
-    const analysisSteps = document.getElementById('analysis-steps');
-    const pathDisplay = document.getElementById('path-display');
-    const contentArea = document.getElementById('content-area');
-    const questionArea = document.getElementById('question-area');
-    const questionTitle = document.getElementById('question-title');
-    const questionText = document.getElementById('question-text');
-    const questionChoices = document.getElementById('question-choices');
-    const submitAnswerButton = document.getElementById('submit-answer-button');
+    const formQuestionsContainer = document.getElementById('form-questions');
+    const chatContainer = document.getElementById('chat-container');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
 
+    // --- State Variables ---
     let sessionId = null;
-    let currentChapter = null;
 
-    const assessableChapters = [
-        'Verkehrszeichenassistent', 'Abstandsregeltempomat', 'Ampelerkennung', 'Spurführungsassistent', 'Notbremsassistent'
-    ];
-    
-    const chapterDetails = {
-        'Verkehrszeichenassistent': 'Erkennt Verkehrszeichen und zeigt die Informationen im Fahrzeug an. Kann die Geschwindigkeit entsprechend automatisch anpassen.',
-        'Abstandsregeltempomat': 'Hält automatisch einen voreingestellten Abstand zum vorausfahrenden Fahrzeug durch Beschleunigen und Abbremsen.',
-        'Ampelerkennung': 'Erkennt Ampeln und zeigt den Status im Fahrzeug an. Kann auf das Ampelsignal reagieren oder die Fahrperson entsprechend informieren.',
-        'Spurführungsassistent': 'Erkennt die Fahrspurmarkierungen und hält das Fahrzeug aktiv in der Spur, ohne die Fahrspur zu verlassen.',
-        'Notbremsassistent': 'Erkennt Kollisionsgefahren und warnt davor. Bremst bei drohender Kollision automatisch zur Reduktion der Aufprallgeschwindigkeit.'
-    };
-
-    const serverChapterMap = {
+    // --- Hardcoded Chapter Data for the Form ---
+    const assessableChapters = {
         'Verkehrszeichenassistent': 'Verkehrszeichen',
         'Abstandsregeltempomat': 'Abstand',
         'Ampelerkennung': 'Ampelerkennung',
@@ -35,201 +20,146 @@ document.addEventListener('DOMContentLoaded', () => {
         'Notbremsassistent': 'Notbremsung'
     };
 
-    function createSliderQuestion(type, chapter) {
-        const chapterId = serverChapterMap[chapter].toLowerCase().replace(' ', '-');
-        const description = chapterDetails[chapter];
-        const nameAttribute = type === 'capability' ? `capability-${chapterId}` : `limitation-${chapterId}`;
-        const uniqueId = `${type}-${chapterId}`;
+    // --- Helper Functions ---
 
+    /**
+     * Creates the HTML for a single slider question.
+     */
+    function createSliderQuestion(chapterName, chapterId) {
         return `
-            <div class="form-section">
-                <h4>${chapter}</h4>
-                <p class="description">${description}</p>
-                <div class="slider-wrapper">
-                    <div class="slider-container">
-                        <input type="range" name="${nameAttribute}" id="${uniqueId}" min="1" max="7" value="4" oninput="document.getElementById('value-${uniqueId}').textContent = this.value">
-                        <span class="slider-value" id="value-${uniqueId}">4</span>
-                    </div>
-                    <div class="slider-labels">
-                        <span>keins</span><span>sehr wenig</span><span>wenig</span><span>eher wenig</span><span>eher viel</span><span>viel</span><span>sehr viel</span>
-                    </div>
+            <div class="slider-wrapper" style="margin-bottom: 25px;">
+                <h4>${chapterName}</h4>
+                <div class="slider-container">
+                    <input type="range" name="${chapterId}" id="${chapterId}" min="1" max="7" value="4" oninput="this.nextElementSibling.textContent = this.value">
+                    <span class="slider-value">4</span>
+                </div>
+                <div class="slider-labels">
+                    <span>Wenig Wissen</span>
+                    <span>Viel Wissen</span>
                 </div>
             </div>
         `;
     }
 
+    /**
+     * Builds the initial assessment form dynamically.
+     */
     function buildAssessmentForm() {
-        let theoreticalHTML = '<h3>Wie viel theoretisches Wissen (z.B. über Artikel, Videos, etc.) haben Sie über die folgenden Fahrerassistenzsysteme?</h3>';
-        let practicalHTML = '<h3>Wie viel praktische Erfahrung haben Sie mit den folgenden Fahrerassistenzsystemen?</h3>';
-        assessableChapters.forEach(chapter => {
-            theoreticalHTML += createSliderQuestion('capability', chapter);
-            practicalHTML += createSliderQuestion('limitation', chapter);
-        });
-        formQuestionsContainer.innerHTML = theoreticalHTML + practicalHTML;
-    }
-
-    async function startSession() {
-        try {
-            const response = await fetch('/start');
-            if (!response.ok) throw new Error('Network response was not ok');
-            const data = await response.json();
-            sessionId = data.sessionId;
-            buildAssessmentForm();
-        } catch (error) {
-            console.error('Error starting session:', error);
-            contentArea.innerHTML = `<h2>Fehler</h2><p>Verbindung zum Backend konnte nicht hergestellt werden. Läuft der Server?</p>`;
+        let formHTML = '';
+        for (const [name, id] of Object.entries(assessableChapters)) {
+            formHTML += createSliderQuestion(name, id);
         }
+        formQuestionsContainer.innerHTML = formHTML;
     }
 
+    /**
+     * Appends a message to the chat window.
+     * @param {string} text - The message content.
+     * @param {string} sender - 'user' or 'assistant'.
+     */
+    function addMessage(text, sender) {
+        // Remove any existing typing indicator
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) indicator.remove();
+
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', `${sender}-message`);
+        messageElement.textContent = text;
+        chatMessages.appendChild(messageElement);
+
+        // Scroll to the bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    /**
+     * Shows a "typing..." indicator in the chat.
+     */
+    function showTypingIndicator() {
+        const indicator = document.createElement('div');
+        indicator.id = 'typing-indicator';
+        indicator.classList.add('message', 'typing-indicator');
+        indicator.textContent = 'CIELO tippt...';
+        chatMessages.appendChild(indicator);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // --- Event Handlers ---
+
+    /**
+     * Handles the submission of the initial assessment form.
+     */
     assessmentForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+        const submitButton = document.getElementById('submit-button');
         submitButton.disabled = true;
-        submitButton.textContent = 'Analysiere...';
+        submitButton.textContent = 'Initialisiere...';
 
         const formData = new FormData(assessmentForm);
         const scores = {};
-        
-        Object.values(serverChapterMap).forEach(serverChapter => {
-            const chapterId = serverChapter.toLowerCase().replace(' ', '-');
-            scores[serverChapter] = {
-                capability: parseInt(formData.get(`capability-${chapterId}`), 10),
-                limitation: parseInt(formData.get(`limitation-${chapterId}`), 10)
+        for (const id of Object.values(assessableChapters)) {
+            scores[id] = {
+                capability: parseInt(formData.get(id), 10),
+                limitation: 0 // Limitation is not used in this version
             };
-        });
-        const openAnswer = formData.get('open-question');
+        }
 
         try {
-            const response = await fetch('/respond', {
+            const response = await fetch('/start-chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId, scores, openAnswer }),
+                body: JSON.stringify({ scores }),
             });
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error || 'Server error');
-            }
-            const data = await response.json();
+            if (!response.ok) throw new Error('Could not start chat session.');
 
-            if (data.needsQuestions) {
-                assessmentForm.style.display = 'none';
-                contentArea.style.display = 'none';
-                questionArea.style.display = 'block';
-                fetchNextQuestion();
-            } else {
-                displayResults(data);
-            }
+            const data = await response.json();
+            sessionId = data.sessionId;
+
+            // Transition to chat view
+            assessmentContainer.style.display = 'none';
+            chatContainer.style.display = 'flex';
+
+            // Display the assistant's welcome message
+            addMessage(data.message, 'assistant');
 
         } catch (error) {
-            console.error('Error submitting form:', error);
-            resultsArea.innerHTML = `<h2>Fehler</h2><p>Etwas ist schiefgelaufen: ${error.message}</p>`;
-            resultsArea.style.display = 'block';
-        } finally {
+            console.error('Error starting chat:', error);
+            alert('Fehler beim Starten des Chats. Bitte versuchen Sie es erneut.');
             submitButton.disabled = false;
-            submitButton.textContent = 'Lernpfad erstellen';
+            submitButton.textContent = 'Chat starten';
         }
     });
 
-    async function fetchNextQuestion() {
-        try {
-            const response = await fetch('/question', {
-                headers: { 'X-Session-ID': sessionId }
-            });
-            if (!response.ok) throw new Error('Could not fetch the next question.');
-            const data = await response.json();
+    /**
+     * Handles sending a new chat message.
+     */
+    chatForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const messageText = chatInput.value.trim();
 
-            currentChapter = data.chapter;
-            questionTitle.textContent = `Kontrollfrage für: ${data.chapter}`;
-            questionText.textContent = data.question;
-            
-            questionChoices.innerHTML = '';
-            Object.entries(data.choices).forEach(([key, value]) => {
-                const choiceEl = document.createElement('div');
-                choiceEl.classList.add('choice');
-                choiceEl.dataset.key = key;
-                choiceEl.textContent = `${key}) ${value}`;
-                questionChoices.appendChild(choiceEl);
-            });
+        if (!messageText || !sessionId) return;
 
-        } catch (error) {
-            console.error('Error fetching question:', error);
-            questionArea.innerHTML = `<p>Fehler beim Laden der Frage.</p>`;
-        }
-    }
-
-    questionChoices.addEventListener('click', (event) => {
-        if (event.target.classList.contains('choice')) {
-            [...questionChoices.children].forEach(child => child.classList.remove('selected'));
-            event.target.classList.add('selected');
-        }
-    });
-
-    submitAnswerButton.addEventListener('click', async () => {
-        const selectedChoice = questionChoices.querySelector('.choice.selected');
-        if (!selectedChoice) {
-            alert('Bitte wählen Sie eine Antwort aus.');
-            return;
-        }
-
-        const answer = selectedChoice.dataset.key;
-        submitAnswerButton.disabled = true;
-        submitAnswerButton.textContent = 'Prüfe...';
+        // Display user's message immediately
+        addMessage(messageText, 'user');
+        chatInput.value = '';
+        showTypingIndicator();
 
         try {
-            const response = await fetch('/answer', {
+            const response = await fetch('/chat-message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId, chapter: currentChapter, answer }),
+                body: JSON.stringify({ sessionId, message: messageText }),
             });
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error || 'Server error');
-            }
-            const data = await response.json();
+            if (!response.ok) throw new Error('Failed to get a response from the assistant.');
 
-            if (data.hasMoreQuestions) {
-                fetchNextQuestion();
-            } else {
-                questionArea.style.display = 'none';
-                displayResults(data);
-            }
+            const data = await response.json();
+            addMessage(data.message, 'assistant');
 
         } catch (error) {
-            console.error('Error submitting answer:', error);
-            questionArea.innerHTML = `<p>Fehler bei der Übermittlung der Antwort: ${error.message}</p>`;
-        } finally {
-            submitAnswerButton.disabled = false;
-            submitAnswerButton.textContent = 'Antwort bestätigen';
+            console.error('Error sending message:', error);
+            addMessage('Entschuldigung, ein Fehler ist aufgetreten. Bitte stellen Sie Ihre Frage erneut.', 'assistant');
         }
     });
 
-    function displayResults(data) {
-        assessmentForm.style.display = 'none';
-        contentArea.style.display = 'none';
-        resultsArea.style.display = 'block';
-
-        analysisSteps.innerHTML = `
-            <div>
-                <strong>Schritt 1: "Danger Gap" Analyse</strong>
-                <p>Hier berechnen wir die Differenz zwischen Ihren Bewertungen für theoretisches Wissen (Fähigkeiten) und praktische Erfahrung (Grenzen). Ein hoher positiver Wert deutet auf mögliches Übervertrauen hin und löst eine Kontrollfrage aus.</p>
-                <pre>${JSON.stringify(data.analysis.dangerGaps, null, 2)}</pre>
-            </div>
-            <div>
-                <strong>Schritt 2: Priorisierung der adaptiven Kapitel</strong>
-                <p>Die Kapitel, bei denen Sie eine Wissenslücke zeigten (falsche Antwort oder Übervertrauen), werden basierend auf dem "Danger Gap" sortiert.</p>
-                <pre>${JSON.stringify(data.analysis.sortedAdaptivePath, null, 2)}</pre>
-            </div>
-        `;
-
-        pathDisplay.innerHTML = `
-            <strong>Schritt 3: Erstellung des finalen Lernpfads ("Safety Sandwich")</strong>
-            <p>Ihr personalisierter Pfad wird in eine feste Struktur eingefügt, die mit den Grundlagen beginnt und mit Sicherheitsthemen endet.</p>
-            <pre>${data.finalPath.join(' → ')}</pre>
-            <hr>
-            <strong>Schritt 4: Begründung der KI</strong>
-            <p>Basierend auf der gesamten Analyse hat die KI die folgende Begründung für Ihren Lernpfad generiert.</p>
-            <p><em>${data.reasoning}</em></p>
-        `;
-    }
-
-    startSession();
+    // --- Initial Setup ---
+    buildAssessmentForm();
 });
