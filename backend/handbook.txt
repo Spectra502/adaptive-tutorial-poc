@@ -1,0 +1,28 @@
+1. Verkehrszeichenassistent
+Beschreibung: Erkennt und reagiert auf Geschwindigkeitsbegrenzungen.
+Funktionen: Das System erkennt Tempolimits und zeigt diese im Display an. Bei Erkennung eines neuen Tempolimits wird die Geschwindigkeit automatisch vom Fahrzeug übernommen.
+Benutzerinteraktion: Aktion: Den Hebel nach oben oder unten drücken. Zweck: Um die Geschwindigkeit manuell zu erhöhen (oben) oder zu verringern (unten). Rückmeldung: Die individuell eingestellte Geschwindigkeit wird im Display angezeigt.
+Visuelle Elemente: Anzeige des Tempolimits im Fahrerdisplay. Bedienelement (Hebel) am Lenkrad.
+
+2. Abstandssassistent/Adaptiver Geschwindigkeitsassistent (ACC)
+Beschreibung: Hält automatisch den Abstand zum vorausfahrenden Fahrzeug.
+Funktionen: Das Fahrzeug bremst oder beschleunigt je nach Verkehrssituation automatisch, um den eingestellten Abstand zu halten.
+Benutzerinteraktion: Aktion: Die Abstandstasten am Lenkrad drücken. Zweck: Den Abstand zum Vorderfahrzeug vergrößern (rechte Taste) oder verringern (linke Taste). Rückmeldung: Der Abstand wird symbolisch im Display angezeigt (mehr Striche = größerer Abstand).
+Visuelle Elemente: Abstandstasten am Lenkrad. Symbolische Anzeige des Abstands im Display.
+
+3. Ampelerkennung
+Beschreibung: Erkennt Ampeln und reagiert auf rote Signale.
+Funktionen: Das System erkennt Ampeln und bremst bei einem roten Signal das Fahrzeug automatisch bis zum Stillstand ab.
+Benutzerinteraktion: Aktion: Nach dem Stillstand an einer roten Ampel muss der Fahrer die Kontrolle übernehmen und manuell wieder anfahren. Reaktivierung: Das teilautomatisierte Fahren kann reaktiviert werden, sobald das entsprechende Symbol (weißes Lenkrad mit "A") im Display aufleuchtet.
+Visuelle Elemente: Ampel-Symbol. Symbol für Übernahmeaufforderung/Reaktivierung.
+
+4. Spurführungs- und Spurwechselassistent
+Beschreibung: Unterstützt beim Halten der Spur und beim Spurwechsel.
+Funktionen: Spurführung: Solange das teilautomatisierte Fahren aktiv ist, hält das Fahrzeug automatisch die Spur. Spurwechsel: Auf mehrspurigen Straßen wechselt das Fahrzeug automatisch die Spur, wenn der Fahrer den Blinker antippt und der Verkehr dies zulässt. Das System beobachtet dabei selbstständig die Umgebung.
+Benutzerinteraktion: Aktion: Den Blinker antippen. Zweck: Einen automatischen Spurwechsel einleiten.
+
+5. Notbremsassistent
+Beschreibung: Bremst das Fahrzeug in Notsituationen bis zum Stillstand ab.
+Funktionen: Das System erkennt Hindernisse wie andere Fahrzeuge oder Personen. Um eine Kollision zu verhindern, bremst das Fahrzeug selbstständig bis zum Stillstand.
+Benutzerinteraktion: Aktion: Nach einem Stillstand durch den Notbremsassistenten muss der Fahrer die Kontrolle übernehmen und manuell wieder anfahren. Reaktivierung: Das teilautomatisierte Fahren kann reaktiviert werden, sobald das entsprechende Symbol (weißes Lenkrad mit "A") im Display aufleuchtet.
+Visuelle Elemente: Symbol für Übernahmeaufforderung/Reaktivierung.
