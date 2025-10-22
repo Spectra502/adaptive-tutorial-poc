@@ -8,10 +8,13 @@ const { OpenAI } = require('openai');
 const { OpenAIEmbeddings } = require("langchain/embeddings/openai");
 const { HNSWLib } = require("langchain/vectorstores/hnswlib");
 const { ChatOpenAI } = require("langchain/chat_models/openai");
-const { PromptTemplate } = require("langchain/prompts");
+// --- MODIFICATION: Import new classes for chat history ---
+const { ChatPromptTemplate, MessagesPlaceholder } = require("langchain/prompts");
 const { RunnableSequence } = require("langchain/schema/runnable");
 const { StringOutputParser } = require("langchain/schema/output_parser");
 const { formatDocumentsAsString } = require("langchain/util/document");
+// --- MODIFICATION: Import message types ---
+const { HumanMessage, AIMessage } = require("langchain/schema");
 
 // Ensure API key is available
 if (!process.env.OPENAI_API_KEY) {
@@ -45,21 +48,20 @@ const initializeAI = async () => {
     // 2. Create a retriever
     const retriever = vectorStore.asRetriever();
 
-    // 3. Create the prompt template
-    const prompt = PromptTemplate.fromTemplate(`
-      Du bist eine expertin-basierte Fahrassistent. Dein Name ist CIELO (Conversational Intelligent Emotional Learning Operator).
+    // 3. --- MODIFICATION: Create a new prompt template that accepts history ---
+    const prompt = ChatPromptTemplate.fromMessages([
+      ["system", `Du bist eine expertin-basierte Fahrassistent. Dein Name ist CIELO (Conversational Intelligent Emotional Learning Operator).
       Deine Aufgabe ist es, die Frage des Nutzers *AUSSCHLIESSLICH* auf Basis des folgenden Kontexts aus dem Fahrzeughandbuch zu beantworten.
       Verwende kein externes Wissen und erfinde keine Funktionen, die nicht im Kontext erwähnt werden.
       Sei freundlich, prägnant und hilfsbereit.
 
       KONTEXT:
-      {context}
+      {context}`],
+      // This placeholder will be filled with the conversation history
+      new MessagesPlaceholder("chat_history"),
+      ["human", "{question}"],
+    ]);
 
-      FRAGE:
-      {question}
-
-      ANTWORT:
-    `);
 
     // 4. Create the LLM model
     const model = new ChatOpenAI({
@@ -67,11 +69,14 @@ const initializeAI = async () => {
         temperature: 0.2 // A lower temperature makes the model more focused and deterministic
     });
 
-    // 5. Create the processing chain
+    // 5. --- MODIFICATION: Create the processing chain to include history ---
     chain = RunnableSequence.from([
       {
+        // The retriever is still only fed the *current* question for context
         context: RunnableSequence.from([(input) => input.question, retriever, formatDocumentsAsString]),
         question: (input) => input.question,
+        // We must also pass the chat_history through to the prompt
+        chat_history: (input) => input.chat_history,
       },
       prompt,
       model,
@@ -111,11 +116,13 @@ app.post('/start-chat', async (req, res) => {
       firstQuestion = `Hallo! Ich bin CIELO. Ich sehe, du möchtest mehr über die Funktionen des Autos erfahren, vielleicht beginnend mit ${topics}. Was möchtest du wissen?`;
     }
 
-    // Invoke the chain to get a more natural-sounding welcome message
+    // --- MODIFICATION: Invoke the chain with an empty history ---
     const welcomeMessage = await chain.invoke({
-        question: firstQuestion
+        question: firstQuestion,
+        chat_history: [] // Pass an empty array for the first message
     });
     
+    // Add AI's response to history
     sessions[sessionId].history.push({ role: 'assistant', content: welcomeMessage });
 
     res.json({ sessionId, message: welcomeMessage });
@@ -136,13 +143,29 @@ app.post('/chat-message', async (req, res) => {
   }
 
   try {
-    // Add user's message to history
+    // --- MODIFICATION: Format history and pass it to the chain ---
+
+    // 1. Format the existing history from plain objects to LangChain message objects
+    const formattedHistory = session.history.map(msg => {
+      if (msg.role === 'user') {
+        return new HumanMessage(msg.content);
+      } else if (msg.role === 'assistant') {
+        return new AIMessage(msg.content);
+      }
+      // As a fallback, but we only use 'user' and 'assistant'
+      return new HumanMessage(msg.content);
+    });
+
+    // 2. Add user's *new* message to the session history (as a plain object)
     session.history.push({ role: 'user', content: message });
     
-    // Get the AI's response using the chain
-    const aiResponse = await chain.invoke({ question: message });
+    // 3. Get the AI's response using the chain
+    const aiResponse = await chain.invoke({
+      question: message, // The new question
+      chat_history: formattedHistory // The history *before* this new question
+    });
 
-    // Add AI's response to history
+    // 4. Add AI's response to history (as a plain object)
     session.history.push({ role: 'assistant', content: aiResponse });
 
     res.json({ message: aiResponse });
