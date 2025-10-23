@@ -13,12 +13,27 @@ if (!process.env.OPENAI_API_KEY) {
 
 const run = async () => {
   try {
-    // 1. Load the handbook text from the file
-    console.log("📖 Loading handbook.txt...");
-    const handbookPath = path.join(__dirname, 'handbook.txt');
-    const handbookText = fs.readFileSync(handbookPath, "utf8");
+    // 1. Load the new handbook JSON
+    console.log("📖 Loading handbook.js...");
+    const handbookPath = path.join(__dirname, 'handbook.js');
+    
+    // Read the file content as text
+    const handbookFileContent = fs.readFileSync(handbookPath, "utf8");
+    // Parse the text content as JSON
+    const handbookData = JSON.parse(handbookFileContent);
 
-    // 2. Split the text into smaller, meaningful chunks
+    // 2. Extract and combine all "texts" fields into a single string
+    let handbookText = "";
+    for (const chapterKey in handbookData) {
+        const chapter = handbookData[chapterKey];
+        if (chapter.texts && Array.isArray(chapter.texts)) {
+            // Add chapter title for context
+            handbookText += `${chapterKey}\n${chapter.texts.join("\n")}\n\n`;
+        }
+    }
+    console.log("✅ Extracted all text from handbook.js.");
+
+    // 3. Split the text into smaller, meaningful chunks
     console.log("🔪 Splitting text into chunks...");
     const textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500, // Max characters per chunk
@@ -27,14 +42,14 @@ const run = async () => {
     const docs = await textSplitter.createDocuments([handbookText]);
     console.log(`✅ Text split into ${docs.length} chunks.`);
 
-    // 3. Create vector embeddings from the chunks
+    // 4. Create vector embeddings from the chunks
     console.log("🧠 Creating vector embeddings... (This may take a moment)");
     const embeddings = new OpenAIEmbeddings();
     
-    // 4. Create the vector index from the documents
+    // 5. Create the vector index from the documents
     const vectorStore = await HNSWLib.fromDocuments(docs, embeddings);
 
-    // 5. Save the vector index to a file
+    // 6. Save the vector index to a file
     const directory = path.join(__dirname, 'vector_index');
     if (!fs.existsSync(directory)){
         fs.mkdirSync(directory);
