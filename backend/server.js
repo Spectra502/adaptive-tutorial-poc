@@ -9,7 +9,7 @@ const { OpenAIEmbeddings } = require("langchain/embeddings/openai");
 const { HNSWLib } = require("langchain/vectorstores/hnswlib");
 const { ChatOpenAI } = require("langchain/chat_models/openai");
 // --- MODIFICATION: Import new classes for chat history ---
-const { ChatPromptTemplate, MessagesPlaceholder } = require("langchain/prompts");
+const { ChatPromptTemplate, MessagesPlaceholder, PromptTemplate } = require("langchain/prompts");
 const { RunnableSequence } = require("langchain/schema/runnable");
 const { StringOutputParser } = require("langchain/schema/output_parser");
 const { formatDocumentsAsString } = require("langchain/util/document");
@@ -35,6 +35,7 @@ let chain;
 const sessions = {};
 
 // --- Helper Function to Initialize AI Components ---
+// --- Helper Function to Initialize AI Components ---
 const initializeAI = async () => {
   try {
     console.log("🧠 Initializing AI components...");
@@ -54,6 +55,22 @@ const initializeAI = async () => {
       Deine Aufgabe ist es, die Frage des Nutzers *AUSSCHLIESSLICH* auf Basis des folgenden Kontexts aus dem Fahrzeughandbuch zu beantworten.
       Verwende kein externes Wissen und erfinde keine Funktionen, die nicht im Kontext erwähnt werden.
       Sei freundlich, prägnant und hilfsbereit.
+
+      --- THIS IS THE MERGED PART ---
+      WICHTIGE REGEL: Wenn deine Antwort eine der folgenden Funktionen im Detail erklärt, füge am *Ende* deiner Antwort ein spezielles Tag hinzu.
+      Die gültigen Tags sind:
+      - [SHOW_CHAPTER: Aktivierung]
+      - [SHOW_CHAPTER: Verkehrszeichen]
+      - [SHOW_CHAPTER: Abstand]
+      - [SHOW_CHAPTER: Ampelerkennung]
+      - [SHOW_CHAPTER: Spurführung]
+      - [SHOW_CHAPTER: Notbremsung]
+      - [SHOW_CHAPTER: Deaktivierung]
+      - [SHOW_CHAPTER: Risiken/Verantwortung]
+      
+      Beispiel: "Der Notbremsassistent erkennt Hindernisse und bremst automatisch. [SHOW_CHAPTER: Notbremsung]"
+      Füge das Tag NUR hinzu, wenn es die Erklärung direkt unterstützt.
+      --- END MERGED PART ---
 
       KONTEXT:
       {context}`],
@@ -98,14 +115,13 @@ const initializeAI = async () => {
 
 // Endpoint to start a new session and get a welcome message
 app.post('/start-chat', async (req, res) => {
+  // ... (This function is already correct, no changes needed)
   const { scores } = req.body;
   const sessionId = `sess_${Date.now()}`;
 
-  // Store initial scores for potential future personalization
   sessions[sessionId] = { scores, history: [] };
 
   try {
-    // Generate a personalized welcome message based on scores
     const topics = Object.entries(scores)
       .filter(([, ratings]) => ratings.capability < 5)
       .map(([topic]) => topic)
@@ -116,13 +132,11 @@ app.post('/start-chat', async (req, res) => {
       firstQuestion = `Hallo! Ich bin CIELO. Ich sehe, du möchtest mehr über die Funktionen des Autos erfahren, vielleicht beginnend mit ${topics}. Was möchtest du wissen?`;
     }
 
-    // --- MODIFICATION: Invoke the chain with an empty history ---
     const welcomeMessage = await chain.invoke({
         question: firstQuestion,
-        chat_history: [] // Pass an empty array for the first message
+        chat_history: [] 
     });
     
-    // Add AI's response to history
     sessions[sessionId].history.push({ role: 'assistant', content: welcomeMessage });
 
     res.json({ sessionId, message: welcomeMessage });
@@ -135,6 +149,7 @@ app.post('/start-chat', async (req, res) => {
 
 // Endpoint to handle subsequent chat messages
 app.post('/chat-message', async (req, res) => {
+  // ... (This function is also correct, but I'll add your log back in)
   const { sessionId, message } = req.body;
   const session = sessions[sessionId];
 
@@ -143,30 +158,26 @@ app.post('/chat-message', async (req, res) => {
   }
 
   try {
-    // --- MODIFICATION: Format history and pass it to the chain ---
-
-    // 1. Format the existing history from plain objects to LangChain message objects
     const formattedHistory = session.history.map(msg => {
       if (msg.role === 'user') {
         return new HumanMessage(msg.content);
       } else if (msg.role === 'assistant') {
         return new AIMessage(msg.content);
       }
-      // As a fallback, but we only use 'user' and 'assistant'
       return new HumanMessage(msg.content);
     });
 
-    // 2. Add user's *new* message to the session history (as a plain object)
     session.history.push({ role: 'user', content: message });
     
-    // 3. Get the AI's response using the chain
     const aiResponse = await chain.invoke({
-      question: message, // The new question
-      chat_history: formattedHistory // The history *before* this new question
+      question: message, 
+      chat_history: formattedHistory 
     });
 
-    // 4. Add AI's response to history (as a plain object)
     session.history.push({ role: 'assistant', content: aiResponse });
+
+    // Add your server log back for debugging
+    console.log("[SERVER LOG] Sending this to frontend:", aiResponse);
 
     res.json({ message: aiResponse });
 
