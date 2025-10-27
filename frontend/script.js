@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mediaElement.src = mediaPath;
             mediaElement.classList.add('message', 'media-message');
             mediaElement.style.width = '100%'; // Or any style you prefer
-            mediaElement.style.marginTop = '10px';
+            mediaElement.style.marginTop = '5px';
             mediaElement.style.borderRadius = '12px';
 
             chatMessages.appendChild(mediaElement);
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId, message: messageText }),
-                cache: 'no-store' // Keep this to prevent caching
+                cache: 'no-store'
             });
             
             if (!response.ok) throw new Error('Failed to get a response from the assistant.');
@@ -309,7 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             console.log("Regex match object:", match);
 
-            // This logic is now correct: if (match) means "if the tag was found"
             if (match) {
                 console.log("Tag found!");
 
@@ -329,7 +328,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 console.log("No tag found. Displaying regular message.");
                 
-                // No tag found, just add the original AI message
                 addMessage(aiResponseText, 'assistant');
             }
 

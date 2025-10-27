@@ -5,7 +5,6 @@ const fs = require("fs");
 const path = require('path');
 require("dotenv").config();
 
-// Make sure your OPENAI_API_KEY is set in your .env file
 if (!process.env.OPENAI_API_KEY) {
   console.error("🚨 OPENAI_API_KEY is not set in the .env file!");
   process.exit(1);

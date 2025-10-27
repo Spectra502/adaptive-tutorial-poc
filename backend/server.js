@@ -8,12 +8,10 @@ const { OpenAI } = require('openai');
 const { OpenAIEmbeddings } = require("langchain/embeddings/openai");
 const { HNSWLib } = require("langchain/vectorstores/hnswlib");
 const { ChatOpenAI } = require("langchain/chat_models/openai");
-// --- MODIFICATION: Import new classes for chat history ---
 const { ChatPromptTemplate, MessagesPlaceholder, PromptTemplate } = require("langchain/prompts");
 const { RunnableSequence } = require("langchain/schema/runnable");
 const { StringOutputParser } = require("langchain/schema/output_parser");
 const { formatDocumentsAsString } = require("langchain/util/document");
-// --- MODIFICATION: Import message types ---
 const { HumanMessage, AIMessage } = require("langchain/schema");
 
 // Ensure API key is available
@@ -34,7 +32,6 @@ let vectorStore;
 let chain;
 const sessions = {};
 
-// --- Helper Function to Initialize AI Components ---
 // --- Helper Function to Initialize AI Components ---
 const initializeAI = async () => {
   try {
@@ -92,7 +89,6 @@ const initializeAI = async () => {
         // The retriever is still only fed the *current* question for context
         context: RunnableSequence.from([(input) => input.question, retriever, formatDocumentsAsString]),
         question: (input) => input.question,
-        // We must also pass the chat_history through to the prompt
         chat_history: (input) => input.chat_history,
       },
       prompt,
@@ -115,7 +111,6 @@ const initializeAI = async () => {
 
 // Endpoint to start a new session and get a welcome message
 app.post('/start-chat', async (req, res) => {
-  // ... (This function is already correct, no changes needed)
   const { scores } = req.body;
   const sessionId = `sess_${Date.now()}`;
 
@@ -149,7 +144,6 @@ app.post('/start-chat', async (req, res) => {
 
 // Endpoint to handle subsequent chat messages
 app.post('/chat-message', async (req, res) => {
-  // ... (This function is also correct, but I'll add your log back in)
   const { sessionId, message } = req.body;
   const session = sessions[sessionId];
 
@@ -176,7 +170,6 @@ app.post('/chat-message', async (req, res) => {
 
     session.history.push({ role: 'assistant', content: aiResponse });
 
-    // Add your server log back for debugging
     console.log("[SERVER LOG] Sending this to frontend:", aiResponse);
 
     res.json({ message: aiResponse });
