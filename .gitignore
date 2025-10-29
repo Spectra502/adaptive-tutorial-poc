@@ -5,6 +5,3 @@ backend/node_modules
 *.zip
 *.JPG
 *.pdf
-
-HMI_GIFs/
-GIFs/
