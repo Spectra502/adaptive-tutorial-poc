@@ -20,7 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
         'Abstandsregeltempomat': 'Abstand',
         'Ampelerkennung': 'Ampelerkennung',
         'Spurführungsassistent': 'Spurführung',
-        'Notbremsassistent': 'Notbremsung'
+        'Notbremsassistent': 'Notbremsung',
+        //'Aktivierung': 'Aktivierung',
+        //'Risiken und Verantwortung': 'Risiken/Verantwortung'
     };
 
     // --- Full Handbook Data (from handbook.js) ---
