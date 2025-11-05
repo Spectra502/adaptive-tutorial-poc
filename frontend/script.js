@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- State Variables ---
     let sessionId = null;
+    // --- NEW: Quiz State ---
+    let inQuizMode = false;
+
 
     // --- Hardcoded Chapter Data for the Form ---
     const assessableChapters = {
@@ -131,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
           { "variable": "riskGIF1", "path": "/HMI_GIFs/8neu1.gif" },
           { "variable": "riskGIF2", "path": "/HMI_GIFs/10-1_anim.gif" },
           { "variable": "riskGIF3", "path": "/GIFs/10-2.gif" },
-          { "variable": "riskGIF4", "path": "/GIFs/10-3.gif" },
+          { "variable": "riskGIF4", "path": "/GIFs/10-4.gif" },
           { "variable": "riskGIF5", "path": "/GIFs/10-4.gif" }
         ],
         "questions": []
@@ -202,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * NEW: Appends a media (GIF) element to the chat.
+     * Appends a media (GIF) element to the chat.
      * @param {string} chapterName - The key from handbookData (e.g., "Spurführung").
      */
     function addMedia(chapterName) {
@@ -223,6 +226,125 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             console.warn(`No media found for chapter: ${chapterName}`);
         }
+    }
+    
+    // --- NEW: Quiz Functions ---
+    
+    /**
+     * Starts a quiz for a specific chapter.
+     * @param {string} chapterKey - The key from handbookData (e.g., "Verkehrszeichen").
+     */
+    async function startQuiz(chapterKey) {
+        if (inQuizMode) return; // Don't start a quiz if one is active
+        
+        inQuizMode = true;
+        chatInput.disabled = true;
+        chatInput.placeholder = "Bitte beantworte die Quizfrage...";
+        
+        try {
+            const response = await fetch('/start-quiz', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId, chapterName: chapterKey }),
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to start quiz');
+            }
+            
+            const questionData = await response.json();
+            renderQuestion(questionData);
+            
+        } catch (error) {
+            console.error('Error starting quiz:', error);
+            addMessage(`Fehler beim Starten des Quiz: ${error.message}`, 'assistant');
+            stopQuiz(); // Reset the UI
+        }
+    }
+    
+    /**
+     * Renders a question and its answer buttons.
+     * @param {object} questionData - { questionText, possibleAnswers }
+     */
+    function renderQuestion(questionData) {
+        // Add question as a message
+        addMessage(questionData.questionText, 'assistant');
+        
+        // Create a container for the answer buttons
+        const buttonContainer = document.createElement('div');
+        buttonContainer.classList.add('message', 'quiz-options');
+        buttonContainer.style.alignSelf = 'flex-start'; // Align with assistant messages
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.flexDirection = 'column';
+        buttonContainer.style.gap = '8px';
+        buttonContainer.style.width = '80%'; // Match message width
+        
+        questionData.possibleAnswers.forEach((answer, index) => {
+            const button = document.createElement('button');
+            button.textContent = answer;
+            button.classList.add('quiz-button'); // For styling
+            button.style.width = '100%';
+            button.style.padding = '10px';
+            button.style.textAlign = 'left';
+            
+            // Add click handler to submit the answer
+            button.onclick = () => {
+                // Disable all buttons in this group after one is clicked
+                buttonContainer.querySelectorAll('.quiz-button').forEach(btn => btn.disabled = true);
+                submitAnswer(index);
+            };
+            buttonContainer.appendChild(button);
+        });
+        
+        chatMessages.appendChild(buttonContainer);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    /**
+     * Submits an answer to the backend.
+     * @param {number} answerIndex - The index of the chosen answer.
+     */
+    async function submitAnswer(answerIndex) {
+        try {
+            const response = await fetch('/submit-answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId, answerIndex }),
+            });
+            
+            if (!response.ok) throw new Error('Failed to submit answer');
+            
+            const data = await response.json();
+            
+            // 1. Show feedback for the answer
+            addMessage(data.feedback, 'assistant');
+            
+            // 2. Check if quiz is over
+            if (data.quizComplete) {
+                addMessage(data.finalMessage, 'assistant');
+                stopQuiz(); // Reset UI
+            } else {
+                // 3. Render the next question
+                renderQuestion(data.nextQuestion);
+            }
+            
+        } catch (error) {
+            console.error('Error submitting answer:', error);
+            addMessage('Ein Fehler ist aufgetreten. Bitte versuche, das Quiz mit "stop quiz" neu zu starten.', 'assistant');
+        }
+    }
+    
+    /**
+     * Resets the UI from quiz mode back to chat mode.
+     */
+    function stopQuiz() {
+        inQuizMode = false;
+        chatInput.disabled = false;
+        chatInput.placeholder = "Fragen Sie mich etwas...";
+        
+        // Remove any leftover quiz buttons
+        document.querySelectorAll('.quiz-options').forEach(el => el.remove());
     }
 
     // --- Event Handlers ---
@@ -273,15 +395,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Handles sending a new chat message.
+     * --- MODIFIED --- 
      */
     chatForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        // This is the user's message, it's a 'const'
         const messageText = chatInput.value.trim();
 
         if (!messageText || !sessionId) return;
+        
+        // --- NEW: Quiz Router Logic ---
+        
+        // Check if user is trying to *start* a quiz
+        // e.g., "quiz Verkehrszeichen" or "test Ampelerkennung"
+        const quizMatch = messageText.match(/^(quiz|test|starte quiz) (.*)/i);
+        
+        if (quizMatch) {
+            const requestedChapter = quizMatch[2].trim(); // e.g., "Ampelerkennung"
+            
+            // Check if it's a valid key from our *form* map
+            // This map translates friendly names (Verkehrszeichenassistent) to keys (Verkehrszeichen)
+            let chapterKey = assessableChapters[requestedChapter]; // Check friendly name
+            if (!chapterKey) {
+                 // If not, check if it's already a direct key
+                 if (Object.values(assessableChapters).includes(requestedChapter)) {
+                     chapterKey = requestedChapter;
+                 }
+            }
 
-        // Display user's message immediately
+            if (chapterKey) {
+                addMessage(messageText, 'user'); // Show user's trigger message
+                addMessage(`Okay, ich starte das Quiz für: ${chapterKey}.`, 'assistant');
+                chatInput.value = ''; // Clear input
+                startQuiz(chapterKey); // Call the new quiz function
+                return; // Stop further execution
+            } else {
+                 addMessage(`Entschuldigung, ich habe kein Quiz für "${requestedChapter}" gefunden.`, 'assistant');
+                 chatInput.value = '';
+                 return;
+            }
+        }
+        
+        // Check if user is in quiz mode and tries to chat normally
+        if (inQuizMode) {
+             addMessage("Bitte beantworte die Frage über die Schaltflächen oder tippe 'stop quiz', um das Quiz zu beenden.", 'assistant');
+             return;
+        }
+        
+        // --- End of Quiz Router Logic ---
+        
+
+        // If not a quiz command, proceed as a normal chat message
         addMessage(messageText, 'user');
         chatInput.value = '';
         showTypingIndicator();
@@ -294,17 +457,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 cache: 'no-store'
             });
             
-            if (!response.ok) throw new Error('Failed to get a response from the assistant.');
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to get a response from the assistant.');
+            }
 
             const data = await response.json();
-            // This is the AI's response, it's a 'let' so we can change it
             let aiResponseText = data.message;
 
             console.log("Raw response from AI:", aiResponseText);
 
             // Check for our special media tag
             const chapterTagRegex = /\[SHOW_CHAPTER: (.*?)\]/;
-            // Run the regex on the AI's response, not the user's message
             const match = aiResponseText.match(chapterTagRegex);
 
             console.log("Regex match object:", match);
@@ -312,28 +476,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (match) {
                 console.log("Tag found!");
 
-                // 1. Get the chapter name (e.g., "Spurführung")
                 const chapterName = match[1];
                 console.log("Chapter name:", chapterName);
-
-                // 2. Remove the tag from the text
                 aiResponseText = aiResponseText.replace(chapterTagRegex, '').trim();
                 console.log("Cleaned message text:", aiResponseText);
                 
-                // 3. Add the clean text message
                 addMessage(aiResponseText, 'assistant');
-                // 4. Add the media
                 addMedia(chapterName);
 
             } else {
                 console.log("No tag found. Displaying regular message.");
-                
                 addMessage(aiResponseText, 'assistant');
             }
 
         } catch (error) {
             console.error('Error sending message:', error);
-            addMessage('Entschuldigung, ein Fehler ist aufgetreten. Bitte stellen Sie Ihre Frage erneut.', 'assistant');
+            addMessage(`Entschuldigung, ein Fehler ist aufgetreten: ${error.message}`, 'assistant');
         }
     });
 
