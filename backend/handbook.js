@@ -9,12 +9,36 @@
       "Es sind nun alle Fahrerassistenzsysteme aktiv und das Fahrzeug fährt teilautomatisiert. Richten Sie Ihren Blick weiterhin auf die Straße und nehmen Sie die Füße von den Pedalen. Ihre Hände können Sie während der automatisierten Fahrt vom Lenkrad nehmen oder am Lenkrad belassen, ohne zu lenken."
     ],
     "media": [
-      { "variable": "daGIF1", "path": "/HMI_GIFs/1neu1.gif" },
-      { "variable": "daGIF1_neu", "path": "/HMI_GIFs/1neu2.gif" },
-      { "variable": "daGIF2", "path": "/HMI_GIFs/1-2.gif" },
-      { "variable": "daGIF3", "path": "/HMI_GIFs/1neu3.gif" },
-      { "variable": "daGIF4", "path": "/HMI_GIFs/1-4.gif" },
-      { "variable": "daJPG5", "path": "/HMI_GIFs/4-3.jpg" }
+      {
+        "tag": "Aktivierung_Status_Grau",
+        "path": "/HMI_GIFs/1neu1.gif",
+        "description": "Zeigt das graue Automationssymbol im Display (teilautomatisiertes Fahren nicht verfügbar)."
+      },
+      {
+        "tag": "Aktivierung_Status_Weiss",
+        "path": "/HMI_GIFs/1neu2.gif",
+        "description": "Zeigt das weiß leuchtende Automationssymbol im Display (teilautomatisiertes Fahren verfügbar)."
+      },
+      {
+        "tag": "Aktivierung_Taste_Druecken",
+        "path": "/HMI_GIFs/1-2.gif",
+        "description": "Animation des Drückens der Aktivierungstaste am Lenkrad."
+      },
+      {
+        "tag": "Aktivierung_Status_Gruen",
+        "path": "/HMI_GIFs/1neu3.gif",
+        "description": "Zeigt das grün leuchtende Automationssymbol im Display (erfolgreich aktiviert)."
+      },
+      {
+        "tag": "Aktivierung_Lenkradlichter_Gruen",
+        "path": "/HMI_GIFs/1-4.gif",
+        "description": "Animation der grün leuchtenden Lenkradlichter."
+      },
+      {
+        "tag": "Aktivierung_Fahrer_Blick",
+        "path": "/HMI_GIFs/4-3.jpg",
+        "description": "Fahrer blickt auf die Straße, während das Fahrzeug teilautomatisiert fährt."
+      }
     ],
     "questions": [
       {
@@ -29,12 +53,20 @@
       },
       {
         "questionText": "Leuchtet das Automationssymbol in weiß, ist das teilautomatisierte Fahren verfügbar.",
-        "possibleAnswers": ["Richtig", "Falsch"],
+        "possibleAnswers": [
+          "Richtig",
+          "Falsch"
+        ],
         "correctAnswerIndex": 0
       },
       {
         "questionText": "In welcher Farbe leuchtet das Automationssymbol bei erfolgreicher Aktivierung des teilautomatisierten Fahrens?",
-        "possibleAnswers": ["Blau", "Rot", "Gelb", "Grün"],
+        "possibleAnswers": [
+          "Blau",
+          "Rot",
+          "Gelb",
+          "Grün"
+        ],
         "correctAnswerIndex": 3
       }
     ]
@@ -47,15 +79,34 @@
       "Ihre individuell eingestellte Geschwindigkeit wird im Display angezeigt."
     ],
     "media": [
-      { "variable": "vzGIF1", "path": "/HMI_GIFs/2neu1.gif" },
-      { "variable": "vzGIF2", "path": "/HMI_GIFs/2neu2.gif" },
-      { "variable": "vzGIF3", "path": "/HMI_GIFs/2-4.gif" },
-      { "variable": "vzGIF4", "path": "/HMI_GIFs/2neu3.gif" }
+      {
+        "tag": "VZO_Erkennung",
+        "path": "/HMI_GIFs/2neu1.gif",
+        "description": "Fahrzeug nähert sich einem Tempolimit-Schild und erkennt dieses."
+      },
+      {
+        "tag": "VZO_Anzeige_Uebernahme",
+        "path": "/HMI_GIFs/2neu2.gif",
+        "description": "Display zeigt das erkannte Tempolimit an; die Geschwindigkeit wird automatisch übernommen."
+      },
+      {
+        "tag": "VZO_Manuelle_Anpassung_Hebel",
+        "path": "/HMI_GIFs/2-4.gif",
+        "description": "Animation des Hebels zur individuellen Erhöhung oder Verringerung der Geschwindigkeit."
+      },
+      {
+        "tag": "VZO_Anzeige_Individuell",
+        "path": "/HMI_GIFs/2neu3.gif",
+        "description": "Display zeigt die individuell eingestellte Geschwindigkeit."
+      }
     ],
     "questions": [
-       {
+      {
         "questionText": "Bei einem neuen Tempolimit wird die erkannte Geschwindigkeit automatisch übernommen.",
-        "possibleAnswers": ["Richtig", "Falsch"],
+        "possibleAnswers": [
+          "Richtig",
+          "Falsch"
+        ],
         "correctAnswerIndex": 0
       },
       {
@@ -70,7 +121,10 @@
       },
       {
         "questionText": "Können Sie als Fahrer*in die Geschwindigkeit während der teilautomatisierten Fahrt (nach der Übernahme) manuell anpassen?",
-        "possibleAnswers": ["Ja", "Nein"],
+        "possibleAnswers": [
+          "Ja",
+          "Nein"
+        ],
         "correctAnswerIndex": 0
       }
     ]
@@ -82,19 +136,37 @@
       "Der individuell eingestellte Abstand wird im Display symbolisch angezeigt. Die Striche vor dem Fahrzeug visualisieren den Abstand – je mehr Striche, desto größer der eingestellte Abstand."
     ],
     "media": [
-      { "variable": "accGIF2", "path": "/HMI_GIFs/3-2.gif" },
-      { "variable": "accGIF3", "path": "/HMI_GIFs/3-3.gif" },
-      { "variable": "accGIF1", "path": "/HMI_GIFs/3neu1.gif" }
+      {
+        "tag": "Abstand_Automatisch_Halten",
+        "path": "/HMI_GIFs/3-2.gif",
+        "description": "Animation, die zeigt, wie das Fahrzeug automatisch Abstand zum vorausfahrenden Fahrzeug hält (bremst/beschleunigt)."
+      },
+      {
+        "tag": "Abstand_Manuelle_Anpassung_Tasten",
+        "path": "/HMI_GIFs/3-3.gif",
+        "description": "Animation der Abstandstasten am Lenkrad zur individuellen Einstellung des Abstands."
+      },
+      {
+        "tag": "Abstand_Anzeige_Display",
+        "path": "/HMI_GIFs/3neu1.gif",
+        "description": "Display-Anzeige des symbolisch eingestellten Abstands (visualisiert durch Striche)."
+      }
     ],
     "questions": [
-       {
+      {
         "questionText": "Ist das teilautomatisierte Fahren aktiviert, hält das Fahrzeug automatisch den Abstand zum Vorderfahrzeug.",
-        "possibleAnswers": ["Richtig", "Falsch"],
+        "possibleAnswers": [
+          "Richtig",
+          "Falsch"
+        ],
         "correctAnswerIndex": 0
       },
       {
         "questionText": "Für Sie als Fahrer*in ist es nicht möglich, den Abstand zum Vorderfahrzeug individuell anzupassen.",
-        "possibleAnswers": ["Richtig", "Falsch"],
+        "possibleAnswers": [
+          "Richtig",
+          "Falsch"
+        ],
         "correctAnswerIndex": 1
       },
       {
@@ -109,29 +181,46 @@
       }
     ]
   },
-   "Ampelerkennung": {
+  "Ampelerkennung": {
     "texts": [
       "Das Fahrzeug erkennt Ampeln und bremst bei roten Ampeln automatisch bis zum Stillstand ab.",
       "Im Stillstand müssen Sie übernehmen und manuell anfahren. Das teilautomatisierte Fahren kann wieder aktiviert werden, sobald das Symbol weiß im Display aufleuchtet."
     ],
     "media": [
-      { "variable": "ampGIF1", "path": "/HMI_GIFs/4neu1.gif" },
-      { "variable": "ampGIF2", "path": "/HMI_GIFs/4neu2.gif" }
+      {
+        "tag": "Ampel_Rot_Bremst",
+        "path": "/HMI_GIFs/4neu1.gif",
+        "description": "Fahrzeug erkennt eine rote Ampel und bremst automatisch bis zum Stillstand ab."
+      },
+      {
+        "tag": "Ampel_Stillstand_Manuell",
+        "path": "/HMI_GIFs/4neu2.gif",
+        "description": "Nach dem Stillstand an der Ampel muss der Fahrer manuell anfahren (Display-Anzeige)."
+      }
     ],
     "questions": [
       {
         "questionText": "Erkennt das Fahrzeug Ampeln, wenn das teilautomatisierte Fahren aktiv ist?",
-        "possibleAnswers": ["Richtig", "Falsch"],
+        "possibleAnswers": [
+          "Richtig",
+          "Falsch"
+        ],
         "correctAnswerIndex": 0
       },
       {
         "questionText": "Das Fahrzeug bremst automatisch, wenn es eine rote Ampel erkannt hat.",
-        "possibleAnswers": ["Richtig", "Falsch"],
+        "possibleAnswers": [
+          "Richtig",
+          "Falsch"
+        ],
         "correctAnswerIndex": 0
       },
       {
         "questionText": "Im Stillstand erkennt das Fahrzeug grüne Ampeln und fährt automatisch wieder los.",
-        "possibleAnswers": ["Richtig", "Falsch"],
+        "possibleAnswers": [
+          "Richtig",
+          "Falsch"
+        ],
         "correctAnswerIndex": 1
       }
     ]
@@ -142,24 +231,45 @@
       "Das Fahrzeug wechselt auf mehrspurigen Straßen automatisch die Spur, wenn Sie den Blinker antippen und es der Verkehr zulässt. Es beobachtet dabei selbstständig die Umgebung."
     ],
     "media": [
-      { "variable": "spGIF1", "path": "/HMI_GIFs/6-2.gif" },
-      { "variable": "spGIF2", "path": "/HMI_GIFs/1-2.gif" },
-      { "variable": "spGIF3", "path": "/HMI_GIFs/9-3.gif" }
+      {
+        "tag": "Spur_Halten_Automatisch",
+        "path": "/HMI_GIFs/6-2.gif",
+        "description": "Animation des Fahrzeugs, das automatisch die Spur hält."
+      },
+      {
+        "tag": "Spur_Wechsel_Blinker_1",
+        "path": "/HMI_GIFs/1-2.gif",
+        "description": "Animation zum automatischen Spurwechsel nach Blinker-Antippen (Teil 1)."
+      },
+      {
+        "tag": "Spur_Wechsel_Blinker_2",
+        "path": "/HMI_GIFs/9-3.gif",
+        "description": "Animation zum automatischen Spurwechsel nach Blinker-Antippen (Teil 2)."
+      }
     ],
     "questions": [
       {
         "questionText": "Ist das teilautomatisierte Fahren aktiv, hält das Fahrzeug die Spur selbstständig.",
-        "possibleAnswers": ["Richtig", "Falsch"],
+        "possibleAnswers": [
+          "Richtig",
+          "Falsch"
+        ],
         "correctAnswerIndex": 0
       },
       {
         "questionText": "Können Sie als Fahrer*in das Lenkrad loslassen, wenn das teilautomatisierte Fahren aktiv ist?",
-        "possibleAnswers": ["Ja", "Nein"],
+        "possibleAnswers": [
+          "Ja",
+          "Nein"
+        ],
         "correctAnswerIndex": 0
       },
       {
         "questionText": "Das Fahrzeug schlägt eigenständig Spurwechsel vor, auch wenn es die Verkehrssituation nicht zulässt.",
-        "possibleAnswers": ["Richtig", "Falsch"],
+        "possibleAnswers": [
+          "Richtig",
+          "Falsch"
+        ],
         "correctAnswerIndex": 1
       }
     ]
@@ -170,13 +280,24 @@
       "Im Stillstand müssen Sie übernehmen und manuell anfahren. Das teilautomatisierte Fahren kann wieder aktiviert werden, sobald das Symbol weiß im Display aufleuchtet."
     ],
     "media": [
-      { "variable": "nbGIF1", "path": "/HMI_GIFs/8-2.gif" },
-      { "variable": "nbGIF2", "path": "/HMI_GIFs/6neu1.gif" }
+      {
+        "tag": "Notbremse_Hindernis",
+        "path": "/HMI_GIFs/8-2.gif",
+        "description": "Fahrzeug führt eine Notbremsung vor einem Hindernis (Person/Fahrzeug) bis zum Stillstand durch."
+      },
+      {
+        "tag": "Notbremse_Stillstand_Manuell",
+        "path": "/HMI_GIFs/6neu1.gif",
+        "description": "Nach der Notbremsung muss der Fahrer im Stillstand übernehmen und manuell anfahren."
+      }
     ],
     "questions": [
       {
         "questionText": "Funktioniert der Notbremsassistent nur bei statischen Hindernissen?",
-        "possibleAnswers": ["Ja", "Nein"],
+        "possibleAnswers": [
+          "Ja",
+          "Nein"
+        ],
         "correctAnswerIndex": 1
       },
       {
@@ -208,10 +329,26 @@
       "Bei erfolgreicher Deaktivierung, erlöschen die Lenkradlichter und das Automationssymbol im Display erscheint wieder weiß."
     ],
     "media": [
-      { "variable": "decGIF1", "path": "/HMI_GIFs/1-2.gif" },
-      { "variable": "decGIF2", "path": "/HMI_GIFs/9-2.gif" },
-      { "variable": "decGIF3", "path": "/HMI_GIFs/9-3.gif" },
-      { "variable": "decGIF4", "path": "/HMI_GIFs/7neu1.gif" }
+      {
+        "tag": "Deaktivierung_Taste",
+        "path": "/HMI_GIFs/1-2.gif",
+        "description": "Deaktivierung durch erneutes Drücken der Aktivierungstaste."
+      },
+      {
+        "tag": "Deaktivierung_Lenken",
+        "path": "/HMI_GIFs/9-3.gif",
+        "description": "Deaktivierung durch manuelles Lenken."
+      },
+      {
+        "tag": "Deaktivierung_Bremse",
+        "path": "/HMI_GIFs/9-2.gif",
+        "description": "Deaktivierung durch Drücken des Bremspedals."
+      },
+      {
+        "tag": "Deaktivierung_Anzeige_Weiss",
+        "path": "/HMI_GIFs/7neu1.gif",
+        "description": "Anzeige der Deaktivierung: Lenkradlichter erlöschen und Automationssymbol wird weiß."
+      }
     ],
     "questions": [
       {
@@ -226,7 +363,10 @@
       },
       {
         "questionText": "Kann das teilautomatisierte Fahren durch manuelles Eingreifen (z.B. Lenken oder Bremsen) durch Sie als Fahrer*in deaktiviert werden?",
-        "possibleAnswers": ["Ja", "Nein"],
+        "possibleAnswers": [
+          "Ja",
+          "Nein"
+        ],
         "correctAnswerIndex": 0
       },
       {
@@ -241,7 +381,7 @@
       }
     ]
   },
-   "Risiken/Verantwortung": {
+  "Risiken/Verantwortung": {
     "texts": [
       "Das teilautomatisierte Fahren entbindet Sie nicht von der Verantwortung als Fahrer*in. Es funktioniert in den meisten Fällen sehr gut, kann jedoch nicht alle Fahrsituationen abdecken. Kommt das System an seine Grenzen, warnt es Sie und fordert zur Übernahme auf.",
       "Es kann jedoch vorkommen, dass das Fahrzeug Fehler macht, ohne vorher zu warnen. Achten Sie deshalb immer auf den Verkehr und die Umgebung. Sie müssen jederzeit sofort eingreifen können. Im Folgenden einige Beispiele für mögliche Fehler:",
@@ -251,21 +391,47 @@
       "Das Fahrzeug erkennt beim Spurwechsel umliegende Fahrzeuge nicht."
     ],
     "media": [
-      { "variable": "riskGIF1", "path": "/HMI_GIFs/8neu1.gif" },
-      { "variable": "riskGIF2", "path": "/HMI_GIFs/10-1_anim.gif" },
-      { "variable": "riskGIF3", "path": "/GIFs/10-2.gif" },
-      { "variable": "riskGIF4", "path": "/GIFs/10-3.gif" },
-      { "variable": "riskGIF5", "path": "/GIFs/10-4.gif" }
+      {
+        "tag": "Risiko_Uebernahme_Warnung",
+        "path": "/HMI_GIFs/8neu1.gif",
+        "description": "Anzeige einer Übernahmeaufforderung / Warnung, wenn das System an seine Grenzen kommt."
+      },
+      {
+        "tag": "Risiko_Fehler_Kreisverkehr",
+        "path": "/HMI_GIFs/10-1_anim.gif",
+        "description": "Beispiel für Systemfehler: Fahrzeug lenkt in einem Kreisverkehr falsch."
+      },
+      {
+        "tag": "Risiko_Fehler_Baustelle",
+        "path": "/GIFs/10-2.gif",
+        "description": "Beispiel für Systemfehler: Fahrzeug erkennt die Fahrspur in einer Baustelle nicht."
+      },
+      {
+        "tag": "Risiko_Fehler_Ampel_Rot",
+        "path": "/GIFs/10-3.gif",
+        "description": "Beispiel für Systemfehler: Fahrzeug bremst nicht bei einer roten Ampel."
+      },
+      {
+        "tag": "Risiko_Fehler_Spurwechsel",
+        "path": "/GIFs/10-4.gif",
+        "description": "Beispiel für Systemfehler: Fahrzeug erkennt ein anderes Fahrzeug beim Spurwechsel nicht."
+      }
     ],
     "questions": [
       {
         "questionText": "Das teilautomatisierte Fahren entbindet Sie als Fahrer*in von der Verantwortung, sodass Sie nicht mehr aufmerksam sein müssen.",
-        "possibleAnswers": ["Richtig", "Falsch"],
+        "possibleAnswers": [
+          "Richtig",
+          "Falsch"
+        ],
         "correctAnswerIndex": 1
       },
       {
         "questionText": "Müssen Sie als Fahrer*in jederzeit auf unvorhersehbare Situationen vorbereitet sein?",
-        "possibleAnswers": ["Ja", "Nein"],
+        "possibleAnswers": [
+          "Ja",
+          "Nein"
+        ],
         "correctAnswerIndex": 0
       },
       {

@@ -61,19 +61,57 @@ const initializeAI = async () => {
       Sei freundlich, prägnant und hilfsbereit.
 
       --- THIS IS THE MERGED PART ---
-      WICHTIGE REGEL: Wenn deine Antwort eine der folgenden Funktionen im Detail erklärt, füge am *Ende* deiner Antwort ein spezielles Tag hinzu.
-      Die gültigen Tags sind:
-      - [SHOW_CHAPTER: Aktivierung]
-      - [SHOW_CHAPTER: Verkehrszeichen]
-      - [SHOW_CHAPTER: Abstand]
-      - [SHOW_CHAPTER: Ampelerkennung]
-      - [SHOW_CHAPTER: Spurführung]
-      - [SHOW_CHAPTER: Notbremsung]
-      - [SHOW_CHAPTER: Deaktivierung]
-      - [SHOW_CHAPTER: Risiken/Verantwortung]
+      WICHTIGE REGEL: Wenn deine Antwort eine der folgenden Funktionen im Detail erklärt, füge am *Ende* deiner Antwort ein spezifisches Medien-Tag hinzu.
+      Wähle das Tag, das am besten zu deiner Erklärung passt.
       
-      Beispiel: "Der Notbremsassistent erkennt Hindernisse und bremst automatisch. [SHOW_CHAPTER: Notbremsung]"
-      Füge das Tag NUR hinzu, wenn es die Erklärung direkt unterstützt.
+      Die gültigen Tags sind:
+      
+      // Aktivierung
+      - [SHOW_MEDIA: Aktivierung_Status_Grau] (Zeigt das graue Automationssymbol im Display - nicht verfügbar)
+      - [SHOW_MEDIA: Aktivierung_Status_Weiss] (Zeigt das weiße Automationssymbol im Display - verfügbar)
+      - [SHOW_MEDIA: Aktivierung_Taste_Druecken] (Zeigt das Drücken der Aktivierungstaste am Lenkrad)
+      - [SHOW_MEDIA: Aktivierung_Status_Gruen] (Zeigt das grüne Automationssymbol im Display - aktiviert)
+      - [SHOW_MEDIA: Aktivierung_Lenkradlichter_Gruen] (Zeigt die grün leuchtenden Lenkradlichter)
+      - [SHOW_MEDIA: Aktivierung_Fahrer_Blick] (Zeigt den Fahrer, der auf die Straße blickt)
+      
+      // Verkehrszeichen
+      - [SHOW_MEDIA: VZO_Erkennung] (Zeigt die Erkennung eines Tempolimit-Schilds)
+      - [SHOW_MEDIA: VZO_Anzeige_Uebernahme] (Zeigt die automatische Übernahme des Tempolimits im Display)
+      - [SHOW_MEDIA: VZO_Manuelle_Anpassung_Hebel] (Zeigt die manuelle Geschwindigkeitsanpassung per Hebel)
+      - [SHOW_MEDIA: VZO_Anzeige_Individuell] (Zeigt die manuell eingestellte Geschwindigkeit im Display)
+      
+      // Abstand
+      - [SHOW_MEDIA: Abstand_Automatisch_Halten] (Zeigt das automatische Halten des Abstands)
+      - [SHOW_MEDIA: Abstand_Manuelle_Anpassung_Tasten] (Zeigt die Tasten zur manuellen Abstandseinstellung)
+      - [SHOW_MEDIA: Abstand_Anzeige_Display] (Zeigt die Abstandsvisualisierung (Striche) im Display)
+      
+      // Ampelerkennung
+      - [SHOW_MEDIA: Ampel_Rot_Bremst] (Zeigt das automatische Bremsen vor einer roten Ampel)
+      - [SHOW_MEDIA: Ampel_Stillstand_Manuell] (Zeigt das Display nach dem Halt an der Ampel - manuelle Übernahme nötig)
+      
+      // Spurführung
+      - [SHOW_MEDIA: Spur_Halten_Automatisch] (Zeigt das automatische Halten der Spur)
+      - [SHOW_MEDIA: Spur_Wechsel_Blinker_1] (Zeigt den automatischen Spurwechsel nach Blinker-Antippen, Teil 1)
+      - [SHOW_MEDIA: Spur_Wechsel_Blinker_2] (Zeigt den automatischen Spurwechsel nach Blinker-Antippen, Teil 2)
+      
+      // Notbremsung
+      - [SHOW_MEDIA: Notbremse_Hindernis] (Zeigt die Notbremsung vor einem Hindernis)
+      - [SHOW_MEDIA: Notbremse_Stillstand_Manuell] (Zeigt die manuelle Übernahme nach einer Notbremsung)
+      
+      // Deaktivierung
+      - [SHOW_MEDIA: Deaktivierung_Taste] (Zeigt die Deaktivierung durch erneutes Drücken der Taste)
+      - [SHOW_MEDIA: Deaktivierung_Lenken] (Zeigt die Deaktivierung durch manuelles Lenken)
+      - [SHOW_MEDIA: Deaktivierung_Bremse] (Zeigt die Deaktivierung durch Drücken des Bremspedals)
+      - [SHOW_MEDIA: Deaktivierung_Anzeige_Weiss] (Zeigt das weiße Symbol und erloschene Lichter nach Deaktivierung)
+      
+      // Risiken/Verantwortung
+      - [SHOW_MEDIA: Risiko_Uebernahme_Warnung] (Zeigt eine Übernahmeaufforderung/Warnung an)
+      - [SHOW_MEDIA: Risiko_Fehler_Kreisverkehr] (Beispiel: Systemfehler in einem Kreisverkehr)
+      - [SHOW_MEDIA: Risiko_Fehler_Baustelle] (Beispiel: Systemfehler bei einer Baustelle)
+      - [SHOW_MEDIA: Risiko_Fehler_Ampel_Rot] (Beispiel: Systemfehler - bremst nicht bei Rot)
+      - [SHOW_MEDIA: Risiko_Fehler_Spurwechsel] (Beispiel: Systemfehler - erkennt Fahrzeug beim Spurwechsel nicht)
+      
+      Beispiel: "Das Fahrzeug bremst bei roten Ampeln automatisch bis zum Stillstand ab. [SHOW_MEDIA: Ampel_Rot_Bremst]"
       --- END MERGED PART ---
 
       KONTEXT:
